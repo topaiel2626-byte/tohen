@@ -91,18 +91,10 @@ class ContentItemUpdate(BaseModel):
     strategy: Optional[str] = None
 
 # --- Helper: AI Chat ---
-async def ai_generate(system_message: str, user_message: str) -> str:
+async def ai_chat(system_message: str, user_message: str) -> str:
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
-        api_key = os.environ.get('EMERGENT_LLM_KEY')
-        chat = LlmChat(
-            api_key=api_key,
-            session_id=str(uuid.uuid4()),
-            system_message=system_message
-        ).with_model("anthropic", "claude-sonnet-4-5-20250929")
-        msg = UserMessage(text=user_message)
-        response = await chat.send_message(msg)
-        return response
+        from ai_provider import ai_generate
+        return await ai_generate(db, system_message, user_message)
     except Exception as e:
         logger.error(f"AI generation error: {e}")
         raise HTTPException(status_code=500, detail=f"שגיאה בייצור תוכן AI: {str(e)}")
@@ -281,7 +273,7 @@ async def analyze_youtube(req: YouTubeAnalyzeRequest):
     if dna:
         style_instruction = f"סגנון כתיבה: {dna.get('writing_style', '')}. טון: {dna.get('tone', '')}. {dna.get('custom_instructions', '')}"
 
-    strategy = await ai_generate(
+    strategy = await ai_chat(
         system_message=f"אתה יועץ אסטרטגי מקצועי. צור אסטרטגיית יישום מפורטת בעברית על בסיס התוכן הבא. כלול צעדים מעשיים ומספרי. {style_instruction}",
         user_message=f"הנה תמלול של סרטון:\n\n{transcript[:8000]}\n\nצור אסטרטגיית יישום מפורטת עם צעדים מעשיים."
     )
@@ -306,11 +298,8 @@ async def analyze_youtube(req: YouTubeAnalyzeRequest):
 @api_router.post("/voice/transcribe")
 async def transcribe_voice(audio: UploadFile = File(...), folder_id: str = Form("general")):
     try:
-        from emergentintegrations.llm.openai import OpenAISpeechToText
-        api_key = os.environ.get('EMERGENT_LLM_KEY')
-        stt = OpenAISpeechToText(api_key=api_key)
+        from ai_provider import transcribe_audio
         
-        # Save to temp file
         content = await audio.read()
         suffix = ".webm"
         if audio.filename:
@@ -319,15 +308,9 @@ async def transcribe_voice(audio: UploadFile = File(...), folder_id: str = Form(
             tmp.write(content)
             tmp_path = tmp.name
         
-        with open(tmp_path, "rb") as audio_file:
-            response = await stt.transcribe(
-                file=audio_file,
-                model="whisper-1",
-                language="he",
-                response_format="json"
-            )
+        text = await transcribe_audio(db, tmp_path, language="he")
         os.unlink(tmp_path)
-        text = response.text
+        
         now = datetime.now(timezone.utc).isoformat()
         doc = {
             "id": str(uuid.uuid4()),
@@ -391,7 +374,7 @@ async def generate_content_package(item_id: str):
 ===SEPARATOR===
 5. כותרות לסרטונים (3 הצעות לכותרות מושכות Click-worthy)"""
 
-    result = await ai_generate(system_msg, user_msg)
+    result = await ai_chat(system_msg, user_msg)
     parts = result.split("===SEPARATOR===")
     
     now = datetime.now(timezone.utc).isoformat()
@@ -550,6 +533,185 @@ async def restore_from_backup(backup: RestoreBackup):
         restored["marketing_dna"] = True
 
     return {"message": "גיבוי שוחזר בהצלחה", "restored": restored}
+
+# --- AI Provider Settings ---
+class AISettingsUpdate(BaseModel):
+    provider: str = "emergent"
+    api_key: str = ""
+    api_url: str = ""
+    model: str = ""
+    stt_provider: str = "emergent"
+    stt_api_key: str = ""
+    stt_api_url: str = ""
+    stt_model: str = "whisper-1"
+
+@api_router.get("/settings/ai")
+async def get_ai_settings():
+    settings = await db.ai_settings.find_one({"id": "default"}, {"_id": 0})
+    if not settings:
+        return {
+            "id": "default",
+            "provider": "emergent",
+            "api_key": "",
+            "api_url": "",
+            "model": "",
+            "stt_provider": "emergent",
+            "stt_api_key": "",
+            "stt_api_url": "",
+            "stt_model": "whisper-1",
+        }
+    # Mask API keys for security
+    masked = {**settings}
+    if masked.get("api_key"):
+        masked["api_key"] = masked["api_key"][:8] + "..." if len(masked["api_key"]) > 8 else "***"
+    if masked.get("stt_api_key"):
+        masked["stt_api_key"] = masked["stt_api_key"][:8] + "..." if len(masked["stt_api_key"]) > 8 else "***"
+    return masked
+
+@api_router.put("/settings/ai")
+async def update_ai_settings(settings: AISettingsUpdate):
+    data = settings.model_dump()
+    data["id"] = "default"
+    # Preserve existing keys if masked value sent
+    existing = await db.ai_settings.find_one({"id": "default"}, {"_id": 0})
+    if existing:
+        if data["api_key"].endswith("...") or data["api_key"] == "***":
+            data["api_key"] = existing.get("api_key", "")
+        if data["stt_api_key"].endswith("...") or data["stt_api_key"] == "***":
+            data["stt_api_key"] = existing.get("stt_api_key", "")
+    await db.ai_settings.update_one({"id": "default"}, {"$set": data}, upsert=True)
+    return {"status": "saved"}
+
+# --- Digital Guide Generator ---
+class GuideRequest(BaseModel):
+    topic: str
+    target_audience: str = ""
+    num_chapters: int = 5
+
+@api_router.post("/agents/generate-guide")
+async def generate_digital_guide(req: GuideRequest):
+    dna = await db.marketing_dna.find_one({"id": "default"}, {"_id": 0})
+    style = ""
+    if dna:
+        style = f"סגנון: {dna.get('writing_style', '')}. טון: {dna.get('tone', '')}. {dna.get('custom_instructions', '')}"
+
+    system_msg = f"""אתה מומחה ליצירת מדריכים דיגיטליים ושיווק שותפים. כתוב בעברית מלאה ומקצועית.
+{style}"""
+
+    user_msg = f"""צור מדריך דיגיטלי מלא בנושא: {req.topic}
+קהל יעד: {req.target_audience or "כללי"}
+מספר פרקים: {req.num_chapters}
+
+צור את כל הפלטים הבאים (הפרד ביניהם עם ===SEPARATOR===):
+
+1. מבנה המדריך - כותרת ראשית, תקציר מוכר, ורשימת פרקים עם תיאור קצר לכל פרק
+===SEPARATOR===
+2. דף נחיתה - כותרת מושכת, 5 נקודות מכירה (bullets), קריאה לפעולה, וטקסט תחתון שכנועי
+===SEPARATOR===
+3. רצף מיילים שיווקי - 3 מיילים: (א) מייל חימום, (ב) מייל ערך+הצעה, (ג) מייל דחיפות/סגירה. לכל מייל: נושא, גוף, CTA
+===SEPARATOR===
+4. פוסטים לשיווק שותפים - 3 פוסטים מוכנים לפרסום עם מקום ל-[קישור שותפים]. מותאמים לפייסבוק, אינסטגרם, ולינקדאין
+===SEPARATOR===
+5. Bio + CTA - טקסט ביו קצר + קריאה לפעולה מותאמים לכל פלטפורמה (פייסבוק, אינסטגרם, לינקדאין, טיקטוק)"""
+
+    result = await ai_chat(system_msg, user_msg)
+    parts = result.split("===SEPARATOR===")
+
+    now = datetime.now(timezone.utc).isoformat()
+    guide = {
+        "id": str(uuid.uuid4()),
+        "topic": req.topic,
+        "target_audience": req.target_audience,
+        "guide_structure": parts[0].strip() if len(parts) > 0 else "",
+        "landing_page": parts[1].strip() if len(parts) > 1 else "",
+        "email_sequence": parts[2].strip() if len(parts) > 2 else "",
+        "affiliate_posts": parts[3].strip() if len(parts) > 3 else "",
+        "bio_cta": parts[4].strip() if len(parts) > 4 else "",
+        "created_at": now,
+    }
+    await db.digital_guides.insert_one(guide)
+    guide.pop("_id", None)
+    return guide
+
+@api_router.get("/agents/guides")
+async def list_guides(limit: int = 20):
+    guides = await db.digital_guides.find({}, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    return {"guides": guides, "total": len(guides)}
+
+@api_router.get("/agents/guides/{guide_id}")
+async def get_guide(guide_id: str):
+    guide = await db.digital_guides.find_one({"id": guide_id}, {"_id": 0})
+    if not guide:
+        raise HTTPException(status_code=404, detail="מדריך לא נמצא")
+    return guide
+
+@api_router.delete("/agents/guides/{guide_id}")
+async def delete_guide(guide_id: str):
+    result = await db.digital_guides.delete_one({"id": guide_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="מדריך לא נמצא")
+    return {"status": "deleted"}
+
+# --- Affiliate Deal Finder ---
+class AffiliateSearchRequest(BaseModel):
+    niche: str
+    keywords: str = ""
+    region: str = "ישראל"
+
+@api_router.post("/agents/find-affiliates")
+async def find_affiliate_deals(req: AffiliateSearchRequest):
+    system_msg = """אתה מומחה בשיווק שותפים (Affiliate Marketing) עם ידע נרחב בתוכניות שותפים גלובליות וישראליות.
+ענה בעברית. תן מידע מעשי ומדויק."""
+
+    user_msg = f"""חפש והצע תוכניות שיווק שותפים בנישה: {req.niche}
+מילות מפתח: {req.keywords or req.niche}
+אזור: {req.region}
+
+צור את הפלטים הבאים (הפרד עם ===SEPARATOR===):
+
+1. רשימת 5-8 תוכניות שותפים רלוונטיות. לכל תוכנית:
+   - שם התוכנית/חברה
+   - אחוז עמלה משוער
+   - סוג (CPA/CPS/CPL)
+   - קישור להרשמה (אם ידוע)
+   - רמת קושי (קל/בינוני/מתקדם)
+===SEPARATOR===
+2. אסטרטגיית קידום - 3 שיטות מומלצות לקדם את המוצרים בנישה הזו, עם דוגמאות מעשיות
+===SEPARATOR===
+3. רעיונות לתוכן - 5 כותרות למאמרים/סרטונים שימשכו תנועה ויכללו קישורי שותפים בצורה טבעית
+===SEPARATOR===
+4. דוגמת פוסט מכירתי - פוסט מוכן לפרסום עם [קישור שותפים] שמוכר בלי להרגיש מכירתי"""
+
+    result = await ai_chat(system_msg, user_msg)
+    parts = result.split("===SEPARATOR===")
+
+    now = datetime.now(timezone.utc).isoformat()
+    deal = {
+        "id": str(uuid.uuid4()),
+        "niche": req.niche,
+        "keywords": req.keywords,
+        "region": req.region,
+        "programs": parts[0].strip() if len(parts) > 0 else "",
+        "strategy": parts[1].strip() if len(parts) > 1 else "",
+        "content_ideas": parts[2].strip() if len(parts) > 2 else "",
+        "sample_post": parts[3].strip() if len(parts) > 3 else "",
+        "created_at": now,
+    }
+    await db.affiliate_searches.insert_one(deal)
+    deal.pop("_id", None)
+    return deal
+
+@api_router.get("/agents/affiliates")
+async def list_affiliate_searches(limit: int = 20):
+    searches = await db.affiliate_searches.find({}, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    return {"searches": searches, "total": len(searches)}
+
+@api_router.delete("/agents/affiliates/{search_id}")
+async def delete_affiliate_search(search_id: str):
+    result = await db.affiliate_searches.delete_one({"id": search_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="חיפוש לא נמצא")
+    return {"status": "deleted"}
 
 # Include router
 app.include_router(api_router)

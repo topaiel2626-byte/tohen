@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  LayoutDashboard, Youtube, Mic, FolderOpen, Settings, Clock, Search, Zap, BookOpen, Briefcase, Lightbulb, X, Download
+  LayoutDashboard, Youtube, Mic, FolderOpen, Settings, Clock, Search, Zap, BookOpen, Briefcase, Lightbulb, X, Download, Cpu, DollarSign, Calendar
 } from "lucide-react";
 import { usePwaInstall } from "@/hooks/usePwaInstall";
 
@@ -12,7 +12,14 @@ const navItems = [
   { path: "/voice", label: "הקלטה קולית", icon: Mic },
   { path: "/library", label: "הספריה", icon: FolderOpen },
   { path: "/history", label: "היסטוריה", icon: Clock },
+  { path: "/calendar", label: "לוח שנה", icon: Calendar },
   { path: "/settings", label: "DNA שיווקי", icon: Settings },
+  { path: "/ai-settings", label: "הגדרות AI", icon: Cpu },
+];
+
+const agentItems = [
+  { path: "/guides", label: "מדריכים דיגיטליים", icon: BookOpen, color: "text-amber-500" },
+  { path: "/affiliates", label: "שיווק שותפים", icon: DollarSign, color: "text-green-500" },
 ];
 
 const folderItems = [
@@ -73,6 +80,21 @@ export function Sidebar({ open, onClose }) {
                 key={item.path}
                 onClick={() => handleNav(item.path)}
                 data-testid={`nav-folder-${item.label}`}
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-zinc-400 hover:bg-white/5 hover:text-white transition-all duration-200 mb-1"
+              >
+                <item.icon className={`w-5 h-5 flex-shrink-0 ${item.color}`} />
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="px-4 py-2 mt-2">
+            <p className="text-[11px] font-semibold tracking-widest text-zinc-600 uppercase mb-3 px-3">סוכני AI</p>
+            {agentItems.map((item) => (
+              <button
+                key={item.path}
+                onClick={() => handleNav(item.path)}
+                data-testid={`nav-agent-${item.path.replace("/", "")}`}
                 className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-zinc-400 hover:bg-white/5 hover:text-white transition-all duration-200 mb-1"
               >
                 <item.icon className={`w-5 h-5 flex-shrink-0 ${item.color}`} />

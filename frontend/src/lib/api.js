@@ -53,4 +53,19 @@ export const getHistory = (params) => api.get("/history", { params });
 export const exportFullBackup = () => api.get("/backup/export");
 export const restoreFromBackup = (data) => api.post("/backup/restore", { data });
 
+// AI Settings
+export const getAISettings = () => api.get("/settings/ai");
+export const updateAISettings = (data) => api.put("/settings/ai", data);
+
+// Digital Guides Agent
+export const generateGuide = (data) => api.post("/agents/generate-guide", data);
+export const listGuides = () => api.get("/agents/guides");
+export const getGuide = (id) => api.get(`/agents/guides/${id}`);
+export const deleteGuide = (id) => api.delete(`/agents/guides/${id}`);
+
+// Affiliate Agent
+export const findAffiliates = (data) => api.post("/agents/find-affiliates", data);
+export const listAffiliateSearches = () => api.get("/agents/affiliates");
+export const deleteAffiliateSearch = (id) => api.delete(`/agents/affiliates/${id}`);
+
 export default api;

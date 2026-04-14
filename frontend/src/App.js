@@ -14,6 +14,10 @@ import Library from "@/pages/Library";
 import ContentItem from "@/pages/ContentItem";
 import Settings from "@/pages/Settings";
 import History from "@/pages/History";
+import AISettings from "@/pages/AISettings";
+import DigitalGuides from "@/pages/DigitalGuides";
+import AffiliateFinder from "@/pages/AffiliateFinder";
+import HebrewCalendar from "@/pages/HebrewCalendar";
 
 function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -77,6 +81,10 @@ function App() {
           <Route path="/content/:id" element={<ContentItem />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/history" element={<History />} />
+          <Route path="/ai-settings" element={<AISettings />} />
+          <Route path="/guides" element={<DigitalGuides />} />
+          <Route path="/affiliates" element={<AffiliateFinder />} />
+          <Route path="/calendar" element={<HebrewCalendar />} />
         </Routes>
       </Layout>
     </BrowserRouter>
