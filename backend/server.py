@@ -497,6 +497,60 @@ async def get_history(search: Optional[str] = None, folder_id: Optional[str] = N
     total = await db.content_items.count_documents(query)
     return {"items": items, "total": total}
 
+# Full Backup - Export all data as JSON
+@api_router.get("/backup/export")
+async def export_full_backup():
+    content_items = await db.content_items.find({}, {"_id": 0}).to_list(None)
+    content_packages = await db.content_packages.find({}, {"_id": 0}).to_list(None)
+    marketing_dna = await db.marketing_dna.find_one({"id": "default"}, {"_id": 0})
+    return {
+        "backup_version": "1.0",
+        "exported_at": datetime.now(timezone.utc).isoformat(),
+        "data": {
+            "content_items": content_items,
+            "content_packages": content_packages,
+            "marketing_dna": marketing_dna,
+        },
+        "counts": {
+            "content_items": len(content_items),
+            "content_packages": len(content_packages),
+        }
+    }
+
+# Restore from backup JSON
+class RestoreBackup(BaseModel):
+    data: dict
+
+@api_router.post("/backup/restore")
+async def restore_from_backup(backup: RestoreBackup):
+    data = backup.data
+    restored = {"content_items": 0, "content_packages": 0, "marketing_dna": False}
+
+    if "content_items" in data and data["content_items"]:
+        for item in data["content_items"]:
+            item.pop("_id", None)
+            existing = await db.content_items.find_one({"id": item.get("id")})
+            if not existing:
+                await db.content_items.insert_one(item)
+                restored["content_items"] += 1
+
+    if "content_packages" in data and data["content_packages"]:
+        for pkg in data["content_packages"]:
+            pkg.pop("_id", None)
+            existing = await db.content_packages.find_one({"id": pkg.get("id")})
+            if not existing:
+                await db.content_packages.insert_one(pkg)
+                restored["content_packages"] += 1
+
+    if "marketing_dna" in data and data["marketing_dna"]:
+        dna = data["marketing_dna"]
+        dna.pop("_id", None)
+        dna["id"] = "default"
+        await db.marketing_dna.update_one({"id": "default"}, {"$set": dna}, upsert=True)
+        restored["marketing_dna"] = True
+
+    return {"message": "גיבוי שוחזר בהצלחה", "restored": restored}
+
 # Include router
 app.include_router(api_router)
 

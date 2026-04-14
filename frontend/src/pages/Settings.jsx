@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
-import { getMarketingDNA, updateMarketingDNA } from "@/lib/api";
+import { useState, useEffect, useRef } from "react";
+import { getMarketingDNA, updateMarketingDNA, exportFullBackup, restoreFromBackup } from "@/lib/api";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, Loader2, Dna } from "lucide-react";
+import { Save, Loader2, Dna, Download, Upload, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Settings() {
@@ -14,6 +14,9 @@ export default function Settings() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     getMarketingDNA()
@@ -31,6 +34,46 @@ export default function Settings() {
       toast.error("שגיאה בשמירה");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleExportBackup = async () => {
+    setExporting(true);
+    try {
+      const res = await exportFullBackup();
+      const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `orbit360-backup-${new Date().toISOString().split("T")[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`גיבוי הורד! ${res.data.counts.content_items} תכנים, ${res.data.counts.content_packages} חבילות`);
+    } catch (e) {
+      toast.error("שגיאה בייצוא הגיבוי");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleRestoreBackup = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setRestoring(true);
+    try {
+      const text = await file.text();
+      const backup = JSON.parse(text);
+      if (!backup.data) {
+        toast.error("קובץ גיבוי לא תקין");
+        return;
+      }
+      const res = await restoreFromBackup(backup.data);
+      toast.success(`שוחזרו ${res.data.restored.content_items} תכנים ו-${res.data.restored.content_packages} חבילות`);
+    } catch (e) {
+      toast.error("שגיאה בשחזור הגיבוי");
+    } finally {
+      setRestoring(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -98,6 +141,62 @@ export default function Settings() {
             </>
           )}
         </button>
+      </div>
+
+      {/* Backup & Restore Section */}
+      <div className="glass-card p-6 space-y-4">
+        <div className="flex items-center gap-3 justify-end">
+          <h2 className="text-xl font-bold text-white" style={{ fontFamily: 'Heebo, sans-serif' }}>
+            גיבוי ושחזור
+          </h2>
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+            <Shield className="w-5 h-5 text-emerald-400" />
+          </div>
+        </div>
+        <p className="text-zinc-400 text-sm text-right">
+          הורד את כל הנתונים שלך כקובץ JSON. תוכל לשחזר אותם בכל זמן — גם בשרת אחר.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button
+            onClick={handleExportBackup}
+            disabled={exporting}
+            data-testid="backup-export-btn"
+            className="flex items-center justify-center gap-2 py-4 px-6 rounded-2xl font-medium transition-all duration-300 min-h-[56px]
+              bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white"
+          >
+            {exporting ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Download className="w-5 h-5" />
+            )}
+            <span>{exporting ? "מייצא..." : "הורד גיבוי מלא"}</span>
+          </button>
+
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={restoring}
+            data-testid="backup-restore-btn"
+            className="flex items-center justify-center gap-2 py-4 px-6 rounded-2xl font-medium transition-all duration-300 min-h-[56px]
+              bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 text-zinc-300"
+          >
+            {restoring ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Upload className="w-5 h-5" />
+            )}
+            <span>{restoring ? "משחזר..." : "שחזר מגיבוי"}</span>
+          </button>
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json"
+          className="hidden"
+          onChange={handleRestoreBackup}
+          data-testid="backup-file-input"
+        />
       </div>
     </div>
   );

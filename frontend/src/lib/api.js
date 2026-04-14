@@ -49,4 +49,8 @@ export const getDailySnack = () => api.get("/daily-snack");
 // History
 export const getHistory = (params) => api.get("/history", { params });
 
+// Backup
+export const exportFullBackup = () => api.get("/backup/export");
+export const restoreFromBackup = (data) => api.post("/backup/restore", { data });
+
 export default api;
