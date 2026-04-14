@@ -31,12 +31,13 @@ Full-stack mobile-first Hebrew RTL web app for AI content management. YouTube an
 ### P0 (Done)
 - Core CRUD, folders, search, history, settings, AI generation
 
-### P1 (Next)
-- Add content item editing
-- Bulk export content packages
-- Folder management (custom folders)
+### P1 (Done)
+- Content item editing (title, content, folder, strategy)
+- Bulk export content packages (single + batch download as .txt)
+- Single package export from content detail page
 
-### P2 (Future)
+### P2 (Next)
+- Custom folders (user-created)
 - Analytics dashboard for content performance
 - Team collaboration features
 - Scheduled content publishing
