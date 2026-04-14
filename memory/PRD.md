@@ -51,6 +51,7 @@ Build a full-stack Mobile-First Hebrew RTL web app named "Orbit360 Engine". AI-p
 - [x] Content editing capability
 - [x] Bulk export for content packages
 - [x] PWA / "Add to Home Screen" (manifest.json, service worker, install button)
+- [x] Full data backup & restore (export all data as JSON, restore from file)
 
 ## Backlog
 - [ ] P2: "Regenerate section" feature (regenerate specific part of content package)
