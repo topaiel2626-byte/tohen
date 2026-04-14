@@ -12,9 +12,9 @@ Build a full-stack Mobile-First Hebrew RTL web app named "Orbit360 Engine". AI-p
 6. **UI/UX**: Premium SaaS design, Dark Mode, Glassmorphism, 100% RTL, PWA capability
 
 ## Tech Stack
-- Frontend: React, TailwindCSS, Shadcn UI, RTL Hebrew
-- Backend: FastAPI, Motor (Async MongoDB)
-- AI: Claude Sonnet 4.5 (via Emergent LLM Key), OpenAI Whisper (via Emergent LLM Key)
+- Frontend: React, TailwindCSS, Shadcn UI, RTL Hebrew, @hebcal/core
+- Backend: FastAPI, Motor (Async MongoDB), openai SDK, anthropic SDK, google-generativeai SDK
+- AI: Flexible provider system (Emergent/OpenAI/Anthropic/Google/OpenAI-Compatible)
 - External: youtube-transcript-api
 
 ## Architecture
@@ -22,7 +22,8 @@ Build a full-stack Mobile-First Hebrew RTL web app named "Orbit360 Engine". AI-p
 /app
 ├── backend/
 │   ├── server.py (All API endpoints)
-│   ├── .env (MONGO_URL, DB_NAME, EMERGENT_API_KEY)
+│   ├── ai_provider.py (Flexible AI abstraction layer)
+│   ├── .env
 │   └── tests/
 ├── frontend/
 │   ├── public/ (manifest.json, sw.js, icons)
@@ -31,13 +32,27 @@ Build a full-stack Mobile-First Hebrew RTL web app named "Orbit360 Engine". AI-p
 │       ├── hooks/usePwaInstall.js
 │       ├── components/ (Sidebar, DailySnack, ui/)
 │       ├── lib/api.js
-│       └── pages/ (Dashboard, YouTubeAnalyzer, VoiceRecorder, Library, ContentItem, Settings, History)
+│       └── pages/
+│           ├── Dashboard.jsx
+│           ├── YouTubeAnalyzer.jsx
+│           ├── VoiceRecorder.jsx
+│           ├── Library.jsx
+│           ├── ContentItem.jsx
+│           ├── Settings.jsx (Marketing DNA + Backup/Restore)
+│           ├── History.jsx
+│           ├── AISettings.jsx (Flexible AI provider config)
+│           ├── HebrewCalendar.jsx (Hebrew + Gregorian calendar)
+│           ├── DigitalGuides.jsx (Guide generation agent)
+│           └── AffiliateFinder.jsx (Affiliate deal finder agent)
 ```
 
-## DB Schema
-- `content_items`: {id, title, content, folder_id, source_type, youtube_url, marketing_dna, created_at, updated_at}
-- `content_packages`: {id, item_id, content: {article, social_post, stories, seo, video_titles}, created_at}
-- `marketing_dna`: {id, tone}
+## DB Collections
+- `content_items`: {id, title, content, folder_id, source_type, youtube_url, strategy, has_package, created_at, updated_at}
+- `content_packages`: {id, content_item_id, article, social_post, stories_scripts, seo_keywords, video_titles, created_at}
+- `marketing_dna`: {id, writing_style, tone, target_audience, brand_values, custom_instructions}
+- `ai_settings`: {id, provider, api_key, api_url, model, stt_provider, stt_api_key, stt_api_url, stt_model}
+- `digital_guides`: {id, topic, target_audience, guide_structure, landing_page, email_sequence, affiliate_posts, bio_cta, created_at}
+- `affiliate_searches`: {id, niche, keywords, region, programs, strategy, content_ideas, sample_post, created_at}
 
 ## Completed Features
 - [x] Base project setup (React + FastAPI + MongoDB, RTL, Dark mode, Glassmorphism)
@@ -52,6 +67,10 @@ Build a full-stack Mobile-First Hebrew RTL web app named "Orbit360 Engine". AI-p
 - [x] Bulk export for content packages
 - [x] PWA / "Add to Home Screen" (manifest.json, service worker, install button)
 - [x] Full data backup & restore (export all data as JSON, restore from file)
+- [x] Flexible AI provider system (Emergent, OpenAI, Anthropic, Google, OpenAI-Compatible)
+- [x] Hebrew + Gregorian calendar with holidays
+- [x] Digital Guides agent (guide structure, landing page, emails, affiliate posts, bio+CTA)
+- [x] Affiliate Deal Finder agent (programs, strategy, content ideas, sample posts)
 
 ## Backlog
 - [ ] P2: "Regenerate section" feature (regenerate specific part of content package)
