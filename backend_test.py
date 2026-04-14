@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 
 class Orbit360APITester:
-    def __init__(self, base_url="https://bfae5142-bea6-479e-a26d-c80674ffc877.preview.emergentagent.com"):
+    def __init__(self, base_url="https://ai-cms-hebrew.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tests_run = 0

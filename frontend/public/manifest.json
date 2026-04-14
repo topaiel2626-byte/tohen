@@ -1,0 +1,26 @@
+{
+  "short_name": "Orbit360",
+  "name": "Orbit360 Engine",
+  "description": "מנוע תוכן AI חכם - ניהול, יצירה והפצה",
+  "dir": "rtl",
+  "lang": "he",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0A0A0B",
+  "background_color": "#0A0A0B",
+  "orientation": "portrait"
+}

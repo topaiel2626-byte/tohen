@@ -2,8 +2,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  LayoutDashboard, Youtube, Mic, FolderOpen, Settings, Clock, Search, Zap, BookOpen, Briefcase, Lightbulb, X
+  LayoutDashboard, Youtube, Mic, FolderOpen, Settings, Clock, Search, Zap, BookOpen, Briefcase, Lightbulb, X, Download
 } from "lucide-react";
+import { usePwaInstall } from "@/hooks/usePwaInstall";
 
 const navItems = [
   { path: "/", label: "לוח בקרה", icon: LayoutDashboard },
@@ -24,10 +25,15 @@ const folderItems = [
 export function Sidebar({ open, onClose }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { canInstall, isInstalled, install } = usePwaInstall();
 
   const handleNav = (path) => {
     navigate(path);
     onClose();
+  };
+
+  const handleInstall = async () => {
+    await install();
   };
 
   return (
@@ -74,6 +80,33 @@ export function Sidebar({ open, onClose }) {
               </button>
             ))}
           </div>
+
+          {/* Install App Button */}
+          {canInstall && !isInstalled && (
+            <div className="px-4 py-4 mt-4 border-t border-white/5">
+              <button
+                onClick={handleInstall}
+                data-testid="pwa-install-btn"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
+                  bg-gradient-to-l from-cyan-500/20 to-violet-500/20 border border-cyan-500/30
+                  text-cyan-400 hover:from-cyan-500/30 hover:to-violet-500/30 transition-all duration-300"
+              >
+                <Download className="w-5 h-5 flex-shrink-0" />
+                <span>התקן אפליקציה</span>
+              </button>
+            </div>
+          )}
+          {isInstalled && (
+            <div className="px-4 py-4 mt-4 border-t border-white/5">
+              <div
+                data-testid="pwa-installed-badge"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-emerald-400/70"
+              >
+                <Download className="w-5 h-5 flex-shrink-0" />
+                <span>האפליקציה מותקנת</span>
+              </div>
+            </div>
+          )}
         </ScrollArea>
       </SheetContent>
     </Sheet>
