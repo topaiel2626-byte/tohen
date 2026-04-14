@@ -1,0 +1,98 @@
+{
+  "theme": "Dark",
+  "archetype": "Archetype 5 (Jewel & Luxury) - Premium Crystal Glassmorphism",
+  "brand_identity": {
+    "name": "Orbit360 Engine",
+    "domain": "AI Content & Strategy Factory",
+    "vibe": "Cinematic, Exclusive, High-Performance, Frictionless"
+  },
+  "rtl_guidelines": {
+    "html_setup": "MUST set <html dir=\"rtl\" lang=\"he\"> in index.html.",
+    "css_logic": "Always use logical properties: ps-*, pe-*, ms-*, me-*, text-start, text-end. Avoid static left/right values like pl-, pr-, ml-, mr-, text-left, text-right.",
+    "layout_mirroring": "Sidebar should slide in from the right. Icons typically on the left of text should move to the right.",
+    "flex_grids": "Tailwind naturally reverses flex-row and grid-cols in RTL. Do NOT manually reverse arrays."
+  },
+  "color_palette": {
+    "background": {
+      "app": "#0A0A0B",
+      "glass_panel": "rgba(255, 255, 255, 0.03)",
+      "glass_panel_hover": "rgba(255, 255, 255, 0.07)"
+    },
+    "text": {
+      "primary": "#FFFFFF",
+      "secondary": "#A1A1AA",
+      "muted": "#52525B"
+    },
+    "brand_accents": {
+      "primary": "#2563EB",
+      "primary_hover": "#1D4ED8",
+      "border_glass": "rgba(255, 255, 255, 0.1)",
+      "highlight_glow": "rgba(37, 99, 235, 0.15)"
+    },
+    "folder_glows": {
+      "torah": "rgba(212, 175, 55, 0.15)",
+      "business": "rgba(37, 99, 235, 0.15)",
+      "mental_snacks": "rgba(16, 185, 129, 0.15)",
+      "general": "rgba(255, 255, 255, 0.1)"
+    }
+  },
+  "typography": {
+    "fonts": {
+      "headings": "Heebo, sans-serif",
+      "body": "Assistant, sans-serif",
+      "setup_instruction": "Import Heebo and Assistant from Google Fonts in index.html or global css."
+    },
+    "scales": {
+      "h1": "text-4xl md:text-5xl font-bold tracking-tight text-white",
+      "h2": "text-2xl md:text-3xl font-semibold text-white",
+      "body": "text-base md:text-lg text-zinc-400 leading-relaxed",
+      "labels": "text-xs font-semibold tracking-widest text-zinc-500 uppercase"
+    }
+  },
+  "surfaces_and_glassmorphism": {
+    "app_background": "Use a deep obsidian base (bg-[#0A0A0B]) with abstract subtle ambient gradients (e.g., a massive 1000px radial gradient of #2563EB with 5% opacity in the top-right).",
+    "cards": "bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]",
+    "buttons_primary": "bg-blue-600 hover:bg-blue-700 text-white font-medium py-4 px-6 rounded-2xl transition-all duration-300 min-h-[56px]",
+    "inputs": "bg-black/40 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-2xl text-white py-4 px-4 min-h-[56px] w-full"
+  },
+  "layout_and_spacing": {
+    "container": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+    "bento_grid": "Use asymmetrical bento grids for the 4 content folders. grid-cols-1 md:grid-cols-2 gap-4 md:gap-6.",
+    "padding": "Generous spacing. p-6 or p-8 inside cards. Section gaps py-16.",
+    "mobile_first": "Ensure all interactive targets are thumb-friendly (min-h-[56px]). Bottom padding should account for mobile browsers."
+  },
+  "components_strategy": {
+    "shadcn_customization": "Heavily customize Shadcn to remove standard light borders. Replace radiuses with rounded-2xl or rounded-3xl. Replace solid card backgrounds with glassmorphism classes.",
+    "sidebar": "Mobile sidebar must be a glassmorphic sheet (Sheet component from Shadcn) sliding in from the RIGHT (RTL).",
+    "audio_recorder": "Large, central, glowing mic button. When active, pulsate with an inner shadow and border-blue-500.",
+    "history_list": "Cardless layout for rows: py-4 border-b border-white/5. Hover adds bg-white/5 rounded-xl."
+  },
+  "media_urls": {
+    "hero_abstract_bg": {
+      "url": "https://images.unsplash.com/photo-1770031079091-c6356e82ea9b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODF8MHwxfHNlYXJjaHwyfHxhYnN0cmFjdCUyMGRhcmslMjBnbGFzc21vcnBoaXNtfGVufDB8fHx8MTc3NjE0MzI1OXww&ixlib=rb-4.1.0&q=85",
+      "description": "Abstract metallic rings with glowing orb, use as highly blurred background element (opacity-20, fixed)."
+    },
+    "daily_snack_cover": {
+      "url": "https://images.unsplash.com/photo-1767775776197-2696328efcfd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzN8MHwxfHNlYXJjaHwyfHxkYXJrJTIwZ3JhcGhpdGUlMjBraW5ldGljJTIwZGVzayUyMHRveXxlbnwwfHx8fDE3NzYxNDMyNTl8MA&ixlib=rb-4.1.0&q=85",
+      "description": "Wooden spinning top on dark surface, use for the Daily Snack feature hero image."
+    },
+    "user_avatar": {
+      "url": "https://images.unsplash.com/photo-1758534063829-a72058381e21?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2ODl8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMGRhcmslMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3NjE0MzI1Nnww&ixlib=rb-4.1.0&q=85",
+      "description": "Man wearing glasses and a black turtleneck. Use as default profile avatar."
+    }
+  },
+  "motion_and_interaction": {
+    "hover_states": "All interactive elements must scale slightly (scale-95 on active, scale-105 on hover for icons) and brighten.",
+    "page_transitions": "Fade in with a slight upward translation (translate-y-4 to translate-y-0, opacity-0 to opacity-100)."
+  },
+  "testing_attributes": {
+    "rule": "MANDATORY: Add data-testid to all actionable elements.",
+    "examples": [
+      "data-testid='youtube-analyze-btn'",
+      "data-testid='record-voice-btn'",
+      "data-testid='folder-torah-card'",
+      "data-testid='daily-snack-card'",
+      "data-testid='mobile-menu-btn'"
+    ]
+  }
+}
