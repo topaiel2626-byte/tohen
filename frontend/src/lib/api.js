@@ -15,7 +15,12 @@ export const getFolders = () => api.get("/folders");
 export const getContentItems = (params) => api.get("/content/items", { params });
 export const getContentItem = (id) => api.get(`/content/items/${id}`);
 export const createContentItem = (data) => api.post("/content/items", data);
+export const updateContentItem = (id, data) => api.put(`/content/items/${id}`, data);
 export const deleteContentItem = (id) => api.delete(`/content/items/${id}`);
+
+// Export
+export const exportSinglePackage = (itemId) => api.get(`/content/export-package/${itemId}`);
+export const bulkExportPackages = (params) => api.get("/content/bulk-export", { params });
 
 // YouTube
 export const analyzeYouTube = (data) => api.post("/youtube/analyze", data);

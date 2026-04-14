@@ -84,6 +84,12 @@ class ManualContentRequest(BaseModel):
     content: str
     folder_id: str = "general"
 
+class ContentItemUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    folder_id: Optional[str] = None
+    strategy: Optional[str] = None
+
 # --- Helper: AI Chat ---
 async def ai_generate(system_message: str, user_message: str) -> str:
     try:
@@ -192,6 +198,19 @@ async def get_content_item(item_id: str):
         raise HTTPException(status_code=404, detail="פריט לא נמצא")
     return item
 
+@api_router.put("/content/items/{item_id}")
+async def update_content_item(item_id: str, update: ContentItemUpdate):
+    item = await db.content_items.find_one({"id": item_id}, {"_id": 0})
+    if not item:
+        raise HTTPException(status_code=404, detail="פריט לא נמצא")
+    update_data = {k: v for k, v in update.model_dump().items() if v is not None}
+    if not update_data:
+        raise HTTPException(status_code=400, detail="אין שדות לעדכון")
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.content_items.update_one({"id": item_id}, {"$set": update_data})
+    updated = await db.content_items.find_one({"id": item_id}, {"_id": 0})
+    return updated
+
 @api_router.delete("/content/items/{item_id}")
 async def delete_content_item(item_id: str):
     result = await db.content_items.delete_one({"id": item_id})
@@ -199,6 +218,47 @@ async def delete_content_item(item_id: str):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="פריט לא נמצא")
     return {"status": "deleted"}
+
+# Bulk Export Packages
+@api_router.get("/content/bulk-export")
+async def bulk_export_packages(folder_id: Optional[str] = None):
+    query = {"has_package": True}
+    if folder_id:
+        query["folder_id"] = folder_id
+    items = await db.content_items.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    result = []
+    for item in items:
+        pkg = await db.content_packages.find_one({"content_item_id": item["id"]}, {"_id": 0})
+        if pkg:
+            result.append({
+                "item_title": item["title"],
+                "item_id": item["id"],
+                "folder_id": item["folder_id"],
+                "article": pkg.get("article", ""),
+                "social_post": pkg.get("social_post", ""),
+                "stories_scripts": pkg.get("stories_scripts", ""),
+                "seo_keywords": pkg.get("seo_keywords", ""),
+                "video_titles": pkg.get("video_titles", ""),
+            })
+    return {"packages": result, "total": len(result)}
+
+@api_router.get("/content/export-package/{item_id}")
+async def export_single_package(item_id: str):
+    item = await db.content_items.find_one({"id": item_id}, {"_id": 0})
+    if not item:
+        raise HTTPException(status_code=404, detail="פריט לא נמצא")
+    pkg = await db.content_packages.find_one({"content_item_id": item_id}, {"_id": 0})
+    if not pkg:
+        raise HTTPException(status_code=404, detail="חבילת תוכן לא נמצאה")
+    sections = [
+        f"# {item['title']}\n",
+        "## מאמר מקצועי\n" + pkg.get("article", ""),
+        "\n---\n## פוסט לרשתות חברתיות\n" + pkg.get("social_post", ""),
+        "\n---\n## תסריטי סטוריז\n" + pkg.get("stories_scripts", ""),
+        "\n---\n## SEO ומילות מפתח\n" + pkg.get("seo_keywords", ""),
+        "\n---\n## כותרות לסרטונים\n" + pkg.get("video_titles", ""),
+    ]
+    return {"text": "\n".join(sections), "title": item["title"]}
 
 # YouTube Analysis
 @api_router.post("/youtube/analyze")

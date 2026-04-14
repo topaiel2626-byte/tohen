@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { getFolders, getContentItems } from "@/lib/api";
-import { BookOpen, Briefcase, Zap, Lightbulb, ArrowLeft, Plus, Youtube, Mic, FileText } from "lucide-react";
+import { getFolders, getContentItems, bulkExportPackages } from "@/lib/api";
+import { BookOpen, Briefcase, Zap, Lightbulb, ArrowLeft, Plus, Youtube, Mic, FileText, Loader2, Download } from "lucide-react";
+import { toast } from "sonner";
 
 const folderIcons = { torah: BookOpen, business: Briefcase, mental_snacks: Zap, general: Lightbulb };
 const folderAccentText = { torah: "text-yellow-500", business: "text-blue-500", mental_snacks: "text-emerald-500", general: "text-zinc-400" };
@@ -31,6 +32,38 @@ export default function Library() {
   }, [folderFilter]);
 
   const selectedFolderData = folders.find((f) => f.id === selectedFolder);
+  const [exporting, setExporting] = useState(false);
+
+  const handleBulkExport = async () => {
+    setExporting(true);
+    try {
+      const params = selectedFolder ? { folder_id: selectedFolder } : {};
+      const res = await bulkExportPackages(params);
+      const pkgs = res.data.packages || [];
+      if (pkgs.length === 0) {
+        toast.info("אין חבילות תוכן לייצוא. צור חבילות תחילה.");
+        setExporting(false);
+        return;
+      }
+      const lines = pkgs.map((p) =>
+        `# ${p.item_title}\n\n## מאמר מקצועי\n${p.article}\n\n---\n## פוסט לרשתות\n${p.social_post}\n\n---\n## תסריטי סטוריז\n${p.stories_scripts}\n\n---\n## SEO ומילות מפתח\n${p.seo_keywords}\n\n---\n## כותרות לסרטונים\n${p.video_titles}\n\n${"=".repeat(60)}\n`
+      );
+      const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `orbit360-export-${selectedFolder || "all"}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success(`${pkgs.length} חבילות יוצאו בהצלחה!`);
+    } catch (e) {
+      toast.error("שגיאה בייצוא");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="page-enter space-y-6" data-testid="library-page">
@@ -38,7 +71,22 @@ export default function Library() {
         <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight" style={{ fontFamily: 'Heebo, sans-serif' }}>
           {selectedFolderData ? selectedFolderData.name : "הספריה"}
         </h1>
-        <p className="text-zinc-400 mt-2">
+        <p className="text-zinc-400 mt-2 hidden">
+          {selectedFolderData ? selectedFolderData.description : "כל התכנים שלך מאורגנים בתיקיות"}
+        </p>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <button
+          onClick={handleBulkExport}
+          disabled={exporting}
+          data-testid="bulk-export-btn"
+          className="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors bg-blue-500/10 py-2 px-4 rounded-xl hover:bg-blue-500/20 disabled:opacity-50"
+        >
+          {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          <span>ייצוא חבילות</span>
+        </button>
+        <p className="text-zinc-400 mt-2 text-right">
           {selectedFolderData ? selectedFolderData.description : "כל התכנים שלך מאורגנים בתיקיות"}
         </p>
       </div>

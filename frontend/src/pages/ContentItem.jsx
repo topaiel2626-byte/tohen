@@ -1,11 +1,19 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getContentItem, generatePackage, getPackage, deleteContentItem } from "@/lib/api";
+import { getContentItem, generatePackage, getPackage, deleteContentItem, updateContentItem, exportSinglePackage } from "@/lib/api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  ArrowRight, Loader2, Trash2, Package, FileText, Share2, Film, Hash, Type, Copy, CheckCircle
+  ArrowRight, Loader2, Trash2, Package, FileText, Share2, Film, Hash, Type, Copy, CheckCircle, Pencil, Save, X, Download
 } from "lucide-react";
 import { toast } from "sonner";
+
+const folders = [
+  { id: "torah", label: "תורה" },
+  { id: "business", label: "עסקים ושיווק" },
+  { id: "mental_snacks", label: "חטיפי מוטיבציה" },
+  { id: "general", label: "רעיונות כלליים" },
+];
 
 export default function ContentItem() {
   const { id } = useParams();
@@ -15,10 +23,13 @@ export default function ContentItem() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [copiedField, setCopiedField] = useState(null);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editForm, setEditForm] = useState({ title: "", content: "", folder_id: "", strategy: "" });
 
   useEffect(() => {
     loadItem();
-  }, [id]);
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadItem = async () => {
     try {
@@ -32,6 +43,44 @@ export default function ContentItem() {
       toast.error("שגיאה בטעינת הפריט");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const startEditing = () => {
+    setEditForm({
+      title: item.title,
+      content: item.content,
+      folder_id: item.folder_id,
+      strategy: item.strategy || "",
+    });
+    setEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setEditing(false);
+  };
+
+  const handleSaveEdit = async () => {
+    setSaving(true);
+    try {
+      const updateData = {};
+      if (editForm.title !== item.title) updateData.title = editForm.title;
+      if (editForm.content !== item.content) updateData.content = editForm.content;
+      if (editForm.folder_id !== item.folder_id) updateData.folder_id = editForm.folder_id;
+      if (editForm.strategy !== (item.strategy || "")) updateData.strategy = editForm.strategy || null;
+
+      if (Object.keys(updateData).length === 0) {
+        setEditing(false);
+        return;
+      }
+      const res = await updateContentItem(id, updateData);
+      setItem(res.data);
+      setEditing(false);
+      toast.success("הפריט עודכן!");
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "שגיאה בעדכון");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -57,6 +106,24 @@ export default function ContentItem() {
       navigate("/library");
     } catch (e) {
       toast.error("שגיאה במחיקה");
+    }
+  };
+
+  const handleExportPackage = async () => {
+    try {
+      const res = await exportSinglePackage(id);
+      const blob = new Blob([res.data.text], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${res.data.title || "package"}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("החבילה יוצאה בהצלחה!");
+    } catch (e) {
+      toast.error("שגיאה בייצוא");
     }
   };
 
@@ -105,6 +172,33 @@ export default function ContentItem() {
           >
             <Trash2 className="w-4 h-4 text-red-400" />
           </button>
+          {!editing ? (
+            <button
+              onClick={startEditing}
+              data-testid="edit-item-btn"
+              className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center hover:bg-blue-500/20 transition-colors"
+            >
+              <Pencil className="w-4 h-4 text-blue-400" />
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleSaveEdit}
+                disabled={saving}
+                data-testid="save-edit-btn"
+                className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center hover:bg-emerald-500/20 transition-colors"
+              >
+                {saving ? <Loader2 className="w-4 h-4 text-emerald-400 animate-spin" /> : <Save className="w-4 h-4 text-emerald-400" />}
+              </button>
+              <button
+                onClick={cancelEditing}
+                data-testid="cancel-edit-btn"
+                className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
+              >
+                <X className="w-4 h-4 text-zinc-400" />
+              </button>
+            </div>
+          )}
         </div>
         <button
           onClick={() => navigate(-1)}
@@ -115,47 +209,105 @@ export default function ContentItem() {
         </button>
       </div>
 
-      {/* Title & Meta */}
-      <div className="text-right">
-        <h1 className="text-2xl md:text-3xl font-bold text-white" style={{ fontFamily: 'Heebo, sans-serif' }}>
-          {item.title}
-        </h1>
-        <div className="flex items-center gap-3 mt-2 justify-end text-zinc-500 text-sm">
-          <span>{new Date(item.created_at).toLocaleDateString("he-IL")}</span>
-          <span className="bg-white/10 px-2 py-0.5 rounded-full text-xs">
-            {item.source_type === "youtube" ? "YouTube" : item.source_type === "voice" ? "הקלטה" : "ידני"}
-          </span>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="glass-card p-6">
-        <h3 className="text-white font-semibold mb-3 text-right">תוכן מקור</h3>
-        <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap text-right">{item.content}</p>
-      </div>
-
-      {/* Strategy */}
-      {item.strategy && (
-        <div className="glass-card glow-blue p-6">
-          <div className="flex items-center justify-between mb-3">
-            <button
-              onClick={() => copyToClipboard(item.strategy, "strategy")}
-              className="flex items-center gap-1 text-zinc-500 hover:text-white transition-colors"
-            >
-              {copiedField === "strategy" ? (
-                <CheckCircle className="w-4 h-4 text-green-400" />
-              ) : (
-                <Copy className="w-4 h-4" />
-              )}
-            </button>
-            <h3 className="text-white font-semibold text-right">אסטרטגיית יישום</h3>
+      {/* Title & Meta - Edit or View */}
+      {editing ? (
+        <div className="glass-card p-6 space-y-4 page-enter">
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-2 text-right">כותרת</label>
+            <input
+              type="text"
+              value={editForm.title}
+              onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+              data-testid="edit-title-input"
+              className="w-full bg-black/40 border border-white/10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-2xl text-white py-3 px-4 outline-none text-right"
+              dir="rtl"
+            />
           </div>
-          <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap text-right">{item.strategy}</p>
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-2 text-right">תיקייה</label>
+            <div className="grid grid-cols-2 gap-2">
+              {folders.map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => setEditForm({ ...editForm, folder_id: f.id })}
+                  data-testid={`edit-folder-${f.id}`}
+                  className={`py-3 px-4 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    editForm.folder_id === f.id ? "bg-blue-600 text-white" : "bg-white/5 text-zinc-400 hover:bg-white/10"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-2 text-right">תוכן</label>
+            <Textarea
+              value={editForm.content}
+              onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
+              data-testid="edit-content-input"
+              className="bg-black/40 border-white/10 focus:border-blue-500 text-white rounded-2xl min-h-[150px] resize-none"
+              dir="rtl"
+            />
+          </div>
+          {item.strategy && (
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-2 text-right">אסטרטגיה</label>
+              <Textarea
+                value={editForm.strategy}
+                onChange={(e) => setEditForm({ ...editForm, strategy: e.target.value })}
+                data-testid="edit-strategy-input"
+                className="bg-black/40 border-white/10 focus:border-blue-500 text-white rounded-2xl min-h-[120px] resize-none"
+                dir="rtl"
+              />
+            </div>
+          )}
         </div>
+      ) : (
+        <>
+          {/* View Mode */}
+          <div className="text-right">
+            <h1 className="text-2xl md:text-3xl font-bold text-white" style={{ fontFamily: 'Heebo, sans-serif' }}>
+              {item.title}
+            </h1>
+            <div className="flex items-center gap-3 mt-2 justify-end text-zinc-500 text-sm">
+              <span>{new Date(item.created_at).toLocaleDateString("he-IL")}</span>
+              <span className="bg-white/10 px-2 py-0.5 rounded-full text-xs">
+                {item.source_type === "youtube" ? "YouTube" : item.source_type === "voice" ? "הקלטה" : "ידני"}
+              </span>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="glass-card p-6">
+            <h3 className="text-white font-semibold mb-3 text-right">תוכן מקור</h3>
+            <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap text-right">{item.content}</p>
+          </div>
+
+          {/* Strategy */}
+          {item.strategy && (
+            <div className="glass-card glow-blue p-6">
+              <div className="flex items-center justify-between mb-3">
+                <button
+                  onClick={() => copyToClipboard(item.strategy, "strategy")}
+                  className="flex items-center gap-1 text-zinc-500 hover:text-white transition-colors"
+                >
+                  {copiedField === "strategy" ? (
+                    <CheckCircle className="w-4 h-4 text-green-400" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </button>
+                <h3 className="text-white font-semibold text-right">אסטרטגיית יישום</h3>
+              </div>
+              <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap text-right">{item.strategy}</p>
+            </div>
+          )}
+        </>
       )}
 
       {/* Generate Package Button */}
-      {!pkg && (
+      {!pkg && !editing && (
         <button
           onClick={handleGenerate}
           disabled={generating}
@@ -177,11 +329,21 @@ export default function ContentItem() {
       )}
 
       {/* Content Package */}
-      {pkg && (
+      {pkg && !editing && (
         <div className="space-y-4">
-          <h2 className="text-xl font-bold text-white text-right" style={{ fontFamily: 'Heebo, sans-serif' }}>
-            חבילת הפצה
-          </h2>
+          <div className="flex items-center justify-between">
+            <button
+              onClick={handleExportPackage}
+              data-testid="export-package-btn"
+              className="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors bg-blue-500/10 py-2 px-4 rounded-xl hover:bg-blue-500/20"
+            >
+              <Download className="w-4 h-4" />
+              <span>ייצוא חבילה</span>
+            </button>
+            <h2 className="text-xl font-bold text-white text-right" style={{ fontFamily: 'Heebo, sans-serif' }}>
+              חבילת הפצה
+            </h2>
+          </div>
           <Tabs defaultValue="article" className="w-full" dir="rtl">
             <TabsList className="w-full bg-white/5 rounded-2xl p-1 grid grid-cols-5 gap-1 h-auto">
               {packageSections.map((sec) => (

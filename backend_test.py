@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 
 class Orbit360APITester:
-    def __init__(self, base_url="https://strategic-inbox.preview.emergentagent.com"):
+    def __init__(self, base_url="https://bfae5142-bea6-479e-a26d-c80674ffc877.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tests_run = 0
@@ -142,6 +142,149 @@ class Orbit360APITester:
         
         return success
 
+    def test_content_update(self):
+        """Test content item update functionality"""
+        # First create a test item
+        test_item = {
+            "title": f"Update Test Item {datetime.now().strftime('%H:%M:%S')}",
+            "content": "Original content for update testing",
+            "folder_id": "general",
+            "source_type": "manual"
+        }
+        
+        success, response = self.run_test(
+            "Create Item for Update Test",
+            "POST",
+            "content/items",
+            200,
+            data=test_item
+        )
+        
+        if not success:
+            return False
+            
+        item_id = response.get("id")
+        if not item_id:
+            print("❌ No item ID returned from create")
+            return False
+
+        # Test PUT update with valid data
+        update_data = {
+            "title": "Updated Title",
+            "content": "Updated content",
+            "folder_id": "torah",
+            "strategy": "Updated strategy"
+        }
+        
+        success, response = self.run_test(
+            "Update Content Item",
+            "PUT",
+            f"content/items/{item_id}",
+            200,
+            data=update_data
+        )
+        
+        if not success:
+            return False
+
+        # Test PUT update with non-existent item
+        success, response = self.run_test(
+            "Update Non-existent Item",
+            "PUT",
+            "content/items/non-existent-id",
+            404,
+            data=update_data
+        )
+        
+        if not success:
+            return False
+
+        # Test PUT update with no fields to update
+        success, response = self.run_test(
+            "Update with No Fields",
+            "PUT",
+            f"content/items/{item_id}",
+            400,
+            data={}
+        )
+        
+        if not success:
+            return False
+
+        # Clean up - delete the test item
+        self.run_test(
+            "Cleanup Update Test Item",
+            "DELETE",
+            f"content/items/{item_id}",
+            200
+        )
+        
+        return True
+
+    def test_bulk_export(self):
+        """Test bulk export functionality"""
+        # Test bulk export (should return empty list if no packages)
+        success, response = self.run_test(
+            "Bulk Export All Packages",
+            "GET",
+            "content/bulk-export",
+            200
+        )
+        
+        if not success:
+            return False
+
+        # Test bulk export with folder filter
+        success, response = self.run_test(
+            "Bulk Export Torah Folder",
+            "GET",
+            "content/bulk-export",
+            200,
+            params={"folder_id": "torah"}
+        )
+        
+        return success
+
+    def test_single_package_export(self):
+        """Test single package export functionality"""
+        # First get existing content items to find one with a package
+        success, response = self.run_test(
+            "Get Items for Package Export Test",
+            "GET",
+            "content/items",
+            200
+        )
+        
+        if not success:
+            return False
+
+        items = response.get("items", [])
+        item_with_package = None
+        
+        for item in items:
+            if item.get("has_package"):
+                item_with_package = item
+                break
+        
+        if item_with_package:
+            # Test export of existing package
+            success, response = self.run_test(
+                "Export Single Package",
+                "GET",
+                f"content/export-package/{item_with_package['id']}",
+                200
+            )
+            return success
+        else:
+            # Test export of non-existent package
+            success, response = self.run_test(
+                "Export Non-existent Package",
+                "GET",
+                "content/export-package/non-existent-id",
+                404
+            )
+            return success
+
     def test_marketing_dna(self):
         """Test marketing DNA settings"""
         # Test GET marketing DNA
@@ -228,6 +371,9 @@ def main():
     test_methods = [
         ("Folders API", tester.test_folders_api),
         ("Content CRUD", tester.test_content_crud),
+        ("Content Update", tester.test_content_update),
+        ("Bulk Export", tester.test_bulk_export),
+        ("Single Package Export", tester.test_single_package_export),
         ("Marketing DNA", tester.test_marketing_dna),
         ("Search API", tester.test_search_api),
         ("Daily Snack", tester.test_daily_snack),
