@@ -1,43 +1,56 @@
 # Orbit360 Engine - PRD
 
-## Problem Statement
-Full-stack mobile-first Hebrew RTL web app for AI content management. YouTube analysis, voice recording, 4 folder organization, multi-channel content factory, marketing DNA settings, smart search, daily snack.
+## Original Problem Statement
+Build a full-stack Mobile-First Hebrew RTL web app named "Orbit360 Engine". AI-powered content management system with persistent database.
+
+## Core Requirements
+1. **Data Management**: Save content/transcripts in DB, history page with search/filter, mobile-first UI with sidebar
+2. **AI Input**: YouTube link analyzer (auto-transcribe + strategy), Voice recording (speech-to-text)
+3. **Library Folders**: 4 fixed folders (Torah, Business & Marketing, Motivation Snacks, General Ideas)
+4. **Content Generation**: Multi-channel packages (Article, LinkedIn/FB post, TikTok/Insta scripts, SEO/Hashtags, 3 video titles)
+5. **Advanced Features**: Marketing DNA (tone settings), Smart search, "Daily Snack" (random motivation idea)
+6. **UI/UX**: Premium SaaS design, Dark Mode, Glassmorphism, 100% RTL, PWA capability
+
+## Tech Stack
+- Frontend: React, TailwindCSS, Shadcn UI, RTL Hebrew
+- Backend: FastAPI, Motor (Async MongoDB)
+- AI: Claude Sonnet 4.5 (via Emergent LLM Key), OpenAI Whisper (via Emergent LLM Key)
+- External: youtube-transcript-api
 
 ## Architecture
-- **Backend**: FastAPI + MongoDB + emergentintegrations (Claude Sonnet 4.5, Whisper)
-- **Frontend**: React + Tailwind + Shadcn UI, RTL Dark Glassmorphism
-- **Database**: MongoDB (content_items, content_packages, marketing_dna)
+```
+/app
+├── backend/
+│   ├── server.py (All API endpoints)
+│   ├── .env (MONGO_URL, DB_NAME, EMERGENT_API_KEY)
+│   └── tests/
+├── frontend/
+│   ├── public/ (manifest.json, sw.js, icons)
+│   └── src/
+│       ├── App.js (Router + Layout)
+│       ├── hooks/usePwaInstall.js
+│       ├── components/ (Sidebar, DailySnack, ui/)
+│       ├── lib/api.js
+│       └── pages/ (Dashboard, YouTubeAnalyzer, VoiceRecorder, Library, ContentItem, Settings, History)
+```
 
-## What's Been Implemented (Feb 2026)
-- Dashboard with folder overview, quick actions, daily snack
-- YouTube analyzer with auto transcript + manual fallback
-- Voice recorder with microphone + manual text input
-- Content library with 4 folders (Torah, Business, Mental Snacks, General)
-- Content item detail view with strategy display
-- Multi-channel content package generation (article, social, stories, SEO, titles)
-- Marketing DNA settings page
-- Smart search across all content
-- History page with filters
-- Mobile sidebar navigation
-- Full RTL Hebrew support
-- Dark mode glassmorphism design
+## DB Schema
+- `content_items`: {id, title, content, folder_id, source_type, youtube_url, marketing_dna, created_at, updated_at}
+- `content_packages`: {id, item_id, content: {article, social_post, stories, seo, video_titles}, created_at}
+- `marketing_dna`: {id, tone}
 
-## User Personas
-- Hebrew-speaking content creators
-- Business owners managing multi-channel content
-- Torah educators and speakers
+## Completed Features
+- [x] Base project setup (React + FastAPI + MongoDB, RTL, Dark mode, Glassmorphism)
+- [x] YouTube Analyzer (auto-transcribe + strategy generation)
+- [x] Voice Recorder (Whisper speech-to-text)
+- [x] Library with 4 fixed folders
+- [x] Content generation (multi-channel packages)
+- [x] Marketing DNA settings
+- [x] Smart search & History
+- [x] Daily Snack
+- [x] Content editing capability
+- [x] Bulk export for content packages
+- [x] PWA / "Add to Home Screen" (manifest.json, service worker, install button)
 
-## Prioritized Backlog
-### P0 (Done)
-- Core CRUD, folders, search, history, settings, AI generation
-
-### P1 (Done)
-- Content item editing (title, content, folder, strategy)
-- Bulk export content packages (single + batch download as .txt)
-- Single package export from content detail page
-
-### P2 (Next)
-- Custom folders (user-created)
-- Analytics dashboard for content performance
-- Team collaboration features
-- Scheduled content publishing
+## Backlog
+- [ ] P2: "Regenerate section" feature (regenerate specific part of content package)
