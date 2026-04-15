@@ -18,6 +18,7 @@ import AISettings from "@/pages/AISettings";
 import DigitalGuides from "@/pages/DigitalGuides";
 import AffiliateFinder from "@/pages/AffiliateFinder";
 import HebrewCalendar from "@/pages/HebrewCalendar";
+import TrendFinder from "@/pages/TrendFinder";
 
 function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -84,6 +85,7 @@ function App() {
           <Route path="/ai-settings" element={<AISettings />} />
           <Route path="/guides" element={<DigitalGuides />} />
           <Route path="/affiliates" element={<AffiliateFinder />} />
+          <Route path="/trends" element={<TrendFinder />} />
           <Route path="/calendar" element={<HebrewCalendar />} />
         </Routes>
       </Layout>

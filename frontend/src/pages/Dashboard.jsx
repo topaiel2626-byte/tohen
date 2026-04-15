@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getFolders, getContentItems } from "@/lib/api";
 import { DailySnack } from "@/components/DailySnack";
-import { Youtube, Mic, BookOpen, Briefcase, Zap, Lightbulb, ArrowLeft, Plus } from "lucide-react";
+import { Youtube, Mic, BookOpen, Briefcase, Zap, Lightbulb, ArrowLeft, Plus, TrendingUp, Calendar, DollarSign } from "lucide-react";
 
 const folderIcons = {
   torah: BookOpen,
@@ -67,13 +67,40 @@ export default function Dashboard() {
         <button
           onClick={() => navigate("/voice")}
           data-testid="quick-voice-btn"
-          className="glass-card p-5 flex flex-col items-center gap-3 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
-          style={{ boxShadow: "0 0 40px rgba(37, 99, 235, 0.1)" }}
+          className="glass-card glow-violet p-5 flex flex-col items-center gap-3 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
         >
-          <div className="w-12 h-12 rounded-2xl bg-blue-600/20 flex items-center justify-center">
-            <Mic className="w-6 h-6 text-blue-400" />
+          <div className="w-12 h-12 rounded-2xl bg-violet-500/20 flex items-center justify-center">
+            <Mic className="w-6 h-6 text-violet-400" />
           </div>
           <span className="text-white font-medium text-sm">הקלטה קולית</span>
+        </button>
+      </div>
+
+      {/* Agent Quick Actions */}
+      <div className="grid grid-cols-3 gap-2">
+        <button
+          onClick={() => navigate("/trends")}
+          data-testid="quick-trends-btn"
+          className="glass-card glow-pink p-4 flex flex-col items-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+        >
+          <TrendingUp className="w-5 h-5 text-pink-400" />
+          <span className="text-zinc-300 text-xs">טרנדים</span>
+        </button>
+        <button
+          onClick={() => navigate("/calendar")}
+          data-testid="quick-calendar-btn"
+          className="glass-card glow-cyan p-4 flex flex-col items-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+        >
+          <Calendar className="w-5 h-5 text-cyan-400" />
+          <span className="text-zinc-300 text-xs">לוח שנה</span>
+        </button>
+        <button
+          onClick={() => navigate("/affiliates")}
+          data-testid="quick-affiliates-btn"
+          className="glass-card glow-green p-4 flex flex-col items-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+        >
+          <DollarSign className="w-5 h-5 text-emerald-400" />
+          <span className="text-zinc-300 text-xs">שותפים</span>
         </button>
       </div>
 

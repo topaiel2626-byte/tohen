@@ -714,6 +714,177 @@ async def delete_affiliate_search(search_id: str):
     return {"status": "deleted"}
 
 # Include router
+
+# --- Scheduled Posts ---
+class ScheduledPostCreate(BaseModel):
+    content_item_id: Optional[str] = None
+    scheduled_date: str
+    note: str = ""
+    title: str = ""
+
+@api_router.post("/calendar/schedule")
+async def create_scheduled_post(post: ScheduledPostCreate):
+    now = datetime.now(timezone.utc).isoformat()
+    doc = {
+        "id": str(uuid.uuid4()),
+        "content_item_id": post.content_item_id,
+        "scheduled_date": post.scheduled_date,
+        "note": post.note,
+        "title": post.title,
+        "status": "pending",
+        "created_at": now,
+    }
+    await db.scheduled_posts.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+@api_router.get("/calendar/schedule")
+async def list_scheduled_posts(month: Optional[str] = None):
+    query = {}
+    if month:
+        query["scheduled_date"] = {"$regex": f"^{month}"}
+    posts = await db.scheduled_posts.find(query, {"_id": 0}).sort("scheduled_date", 1).to_list(200)
+    return {"posts": posts}
+
+@api_router.delete("/calendar/schedule/{post_id}")
+async def delete_scheduled_post(post_id: str):
+    result = await db.scheduled_posts.delete_one({"id": post_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="פרסום מתוזמן לא נמצא")
+    return {"status": "deleted"}
+
+@api_router.put("/calendar/schedule/{post_id}/done")
+async def mark_scheduled_done(post_id: str):
+    await db.scheduled_posts.update_one({"id": post_id}, {"$set": {"status": "done"}})
+    return {"status": "updated"}
+
+# --- Push Notifications ---
+class PushSubscription(BaseModel):
+    endpoint: str
+    keys: dict
+
+@api_router.get("/push/vapid-key")
+async def get_vapid_key():
+    return {"publicKey": os.environ.get("VAPID_PUBLIC_KEY", "")}
+
+@api_router.post("/push/subscribe")
+async def push_subscribe(sub: PushSubscription):
+    doc = sub.model_dump()
+    doc["id"] = str(uuid.uuid4())
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.push_subscriptions.update_one(
+        {"endpoint": doc["endpoint"]},
+        {"$set": doc},
+        upsert=True
+    )
+    return {"status": "subscribed"}
+
+@api_router.post("/push/send-test")
+async def send_test_push():
+    from pywebpush import webpush, WebPushException
+    import json
+    subs = await db.push_subscriptions.find({}, {"_id": 0}).to_list(50)
+    sent = 0
+    for sub in subs:
+        try:
+            webpush(
+                subscription_info={"endpoint": sub["endpoint"], "keys": sub["keys"]},
+                data=json.dumps({"title": "Orbit360", "body": "התזכורת שלך מ-Orbit360! 🚀", "url": "/calendar"}),
+                vapid_private_key=os.environ.get("VAPID_PRIVATE_KEY", ""),
+                vapid_claims={"sub": "mailto:orbit360@example.com"}
+            )
+            sent += 1
+        except Exception as e:
+            logger.error(f"Push send error: {e}")
+    return {"sent": sent, "total": len(subs)}
+
+@api_router.post("/push/notify-scheduled")
+async def notify_scheduled_posts():
+    from pywebpush import webpush
+    import json
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    posts = await db.scheduled_posts.find({"scheduled_date": today, "status": "pending"}, {"_id": 0}).to_list(50)
+    if not posts:
+        return {"notified": 0}
+    subs = await db.push_subscriptions.find({}, {"_id": 0}).to_list(50)
+    notified = 0
+    for post in posts:
+        title = post.get("title") or post.get("note") or "פרסום מתוזמן"
+        for sub in subs:
+            try:
+                webpush(
+                    subscription_info={"endpoint": sub["endpoint"], "keys": sub["keys"]},
+                    data=json.dumps({"title": "Orbit360 - הגיע הזמן לפרסם!", "body": title, "url": "/calendar"}),
+                    vapid_private_key=os.environ.get("VAPID_PRIVATE_KEY", ""),
+                    vapid_claims={"sub": "mailto:orbit360@example.com"}
+                )
+                notified += 1
+            except Exception:
+                pass
+    return {"notified": notified}
+
+# --- Trend Finder Agent ---
+class TrendSearchRequest(BaseModel):
+    niche: str
+    platform: str = "כללי"
+
+@api_router.post("/agents/find-trends")
+async def find_trends(req: TrendSearchRequest):
+    system_msg = """אתה מומחה בזיהוי טרנדים ויצירת כסף מהאינטרנט. יש לך ידע עמוק בשיווק דיגיטלי, מסחר אלקטרוני, שיווק שותפים, יצירת תוכן, ומונטיזציה.
+ענה בעברית. תן מידע מעשי, ספציפי וממוקד ברווחים."""
+
+    user_msg = f"""חפש טרנדים חמים בנישה: {req.niche}
+פלטפורמה: {req.platform}
+
+צור את הפלטים הבאים (הפרד עם ===SEPARATOR===):
+
+1. 5 טרנדים חמים עכשיו - לכל טרנד:
+   - שם הטרנד
+   - למה הוא חם
+   - פוטנציאל הכנסה (נמוך/בינוני/גבוה)
+   - רמת תחרות
+===SEPARATOR===
+2. 3 דרכים לעשות כסף מכל טרנד - תוכנית פעולה מעשית עם:
+   - שיטת מונטיזציה (שיווק שותפים, מוצר דיגיטלי, ייעוץ, פרסום)
+   - הכנסה פוטנציאלית חודשית
+   - זמן עד לתוצאות
+   - השקעה נדרשת
+===SEPARATOR===
+3. רעיונות לתוכן ויראלי - 5 כותרות/רעיונות לתוכן שיכולים להפוך ויראליים בנישה הזו, עם טיפ לכל אחד
+===SEPARATOR===
+4. תוכנית פעולה ל-30 יום - צעדים מעשיים יום-יומיים להתחיל לייצר הכנסה מהטרנד הכי חם"""
+
+    result = await ai_chat(system_msg, user_msg)
+    parts = result.split("===SEPARATOR===")
+
+    now = datetime.now(timezone.utc).isoformat()
+    trend = {
+        "id": str(uuid.uuid4()),
+        "niche": req.niche,
+        "platform": req.platform,
+        "trends": parts[0].strip() if len(parts) > 0 else "",
+        "monetization": parts[1].strip() if len(parts) > 1 else "",
+        "viral_content": parts[2].strip() if len(parts) > 2 else "",
+        "action_plan": parts[3].strip() if len(parts) > 3 else "",
+        "created_at": now,
+    }
+    await db.trend_searches.insert_one(trend)
+    trend.pop("_id", None)
+    return trend
+
+@api_router.get("/agents/trends")
+async def list_trend_searches(limit: int = 20):
+    searches = await db.trend_searches.find({}, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    return {"searches": searches, "total": len(searches)}
+
+@api_router.delete("/agents/trends/{search_id}")
+async def delete_trend_search(search_id: str):
+    result = await db.trend_searches.delete_one({"id": search_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="חיפוש לא נמצא")
+    return {"status": "deleted"}
+
+# Include router
 app.include_router(api_router)
 
 app.add_middleware(

@@ -68,4 +68,20 @@ export const findAffiliates = (data) => api.post("/agents/find-affiliates", data
 export const listAffiliateSearches = () => api.get("/agents/affiliates");
 export const deleteAffiliateSearch = (id) => api.delete(`/agents/affiliates/${id}`);
 
+// Trend Agent
+export const findTrends = (data) => api.post("/agents/find-trends", data);
+export const listTrendSearches = () => api.get("/agents/trends");
+export const deleteTrendSearch = (id) => api.delete(`/agents/trends/${id}`);
+
+// Calendar Scheduling
+export const createScheduledPost = (data) => api.post("/calendar/schedule", data);
+export const listScheduledPosts = (month) => api.get("/calendar/schedule", { params: { month } });
+export const deleteScheduledPost = (id) => api.delete(`/calendar/schedule/${id}`);
+export const markScheduledDone = (id) => api.put(`/calendar/schedule/${id}/done`);
+
+// Push Notifications
+export const getVapidKey = () => api.get("/push/vapid-key");
+export const pushSubscribe = (sub) => api.post("/push/subscribe", sub);
+export const sendTestPush = () => api.post("/push/send-test");
+
 export default api;
