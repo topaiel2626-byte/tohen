@@ -25,7 +25,7 @@ function Layout({ children }) {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] relative">
+    <div className="min-h-screen bg-[#FAFBFC] relative">
       {/* Ambient BG */}
       <div className="app-bg" />
 

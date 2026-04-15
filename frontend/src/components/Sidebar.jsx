@@ -71,7 +71,7 @@ export function Sidebar({ open, onClose }) {
                   onClick={() => handleNav(item.path)}
                   data-testid={`nav-${item.path.replace("/", "") || "dashboard"}`}
                   className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm transition-all duration-200 mb-1
-                    ${isActive ? "bg-blue-50 text-blue-700" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"}`}
+                    ${isActive ? "bg-orange-50 text-orange-700" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"}`}
                 >
                   <item.icon className="w-5 h-5 flex-shrink-0" />
                   <span>{item.label}</span>
