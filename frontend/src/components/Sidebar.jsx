@@ -48,16 +48,21 @@ export function Sidebar({ open, onClose }) {
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent
         side="right"
-        className="w-[300px] bg-[#0A0A0B]/95 backdrop-blur-2xl border-white/10 p-0"
+        className="w-[300px] bg-white/95 backdrop-blur-2xl border-black/5 p-0"
         data-testid="sidebar-content"
       >
         <SheetHeader className="p-6 pb-2">
-          <SheetTitle className="text-white text-xl font-bold text-right">Orbit360</SheetTitle>
-          <SheetDescription className="text-zinc-500 text-sm text-right">מנוע התוכן שלך</SheetDescription>
+          <div className="flex items-center gap-3 justify-end">
+            <div className="text-right">
+              <SheetTitle className="text-slate-800 text-xl font-bold">מערך AI</SheetTitle>
+              <SheetDescription className="text-slate-400 text-sm">אליאב צוף</SheetDescription>
+            </div>
+            <img src="/profile.jpg" alt="אליאב צוף" className="w-10 h-10 rounded-xl object-cover border border-black/5" />
+          </div>
         </SheetHeader>
         <ScrollArea className="h-[calc(100vh-100px)]">
           <div className="px-4 py-2">
-            <p className="text-[11px] font-semibold tracking-widest text-zinc-600 uppercase mb-3 px-3">ניווט ראשי</p>
+            <p className="text-[11px] font-semibold tracking-widest text-slate-400 uppercase mb-3 px-3">ניווט ראשי</p>
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
@@ -66,7 +71,7 @@ export function Sidebar({ open, onClose }) {
                   onClick={() => handleNav(item.path)}
                   data-testid={`nav-${item.path.replace("/", "") || "dashboard"}`}
                   className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm transition-all duration-200 mb-1
-                    ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:bg-white/5 hover:text-white"}`}
+                    ${isActive ? "bg-blue-50 text-blue-700" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"}`}
                 >
                   <item.icon className="w-5 h-5 flex-shrink-0" />
                   <span>{item.label}</span>
@@ -75,13 +80,13 @@ export function Sidebar({ open, onClose }) {
             })}
           </div>
           <div className="px-4 py-2 mt-2">
-            <p className="text-[11px] font-semibold tracking-widest text-zinc-600 uppercase mb-3 px-3">תיקיות</p>
+            <p className="text-[11px] font-semibold tracking-widest text-slate-400 uppercase mb-3 px-3">תיקיות</p>
             {folderItems.map((item) => (
               <button
                 key={item.path}
                 onClick={() => handleNav(item.path)}
                 data-testid={`nav-folder-${item.label}`}
-                className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-zinc-400 hover:bg-white/5 hover:text-white transition-all duration-200 mb-1"
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all duration-200 mb-1"
               >
                 <item.icon className={`w-5 h-5 flex-shrink-0 ${item.color}`} />
                 <span>{item.label}</span>
@@ -90,13 +95,13 @@ export function Sidebar({ open, onClose }) {
           </div>
 
           <div className="px-4 py-2 mt-2">
-            <p className="text-[11px] font-semibold tracking-widest text-zinc-600 uppercase mb-3 px-3">סוכני AI</p>
+            <p className="text-[11px] font-semibold tracking-widest text-slate-400 uppercase mb-3 px-3">סוכני AI</p>
             {agentItems.map((item) => (
               <button
                 key={item.path}
                 onClick={() => handleNav(item.path)}
                 data-testid={`nav-agent-${item.path.replace("/", "")}`}
-                className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-zinc-400 hover:bg-white/5 hover:text-white transition-all duration-200 mb-1"
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all duration-200 mb-1"
               >
                 <item.icon className={`w-5 h-5 flex-shrink-0 ${item.color}`} />
                 <span>{item.label}</span>
@@ -106,13 +111,13 @@ export function Sidebar({ open, onClose }) {
 
           {/* Install App Button */}
           {canInstall && !isInstalled && (
-            <div className="px-4 py-4 mt-4 border-t border-white/5">
+            <div className="px-4 py-4 mt-4 border-t border-black/5">
               <button
                 onClick={handleInstall}
                 data-testid="pwa-install-btn"
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
-                  bg-gradient-to-l from-cyan-500/20 to-violet-500/20 border border-cyan-500/30
-                  text-cyan-400 hover:from-cyan-500/30 hover:to-violet-500/30 transition-all duration-300"
+                  bg-gradient-to-l from-blue-50 to-violet-50 border border-blue-200
+                  text-blue-600 hover:from-blue-100 hover:to-violet-100 transition-all duration-300"
               >
                 <Download className="w-5 h-5 flex-shrink-0" />
                 <span>התקן אפליקציה</span>
@@ -120,10 +125,10 @@ export function Sidebar({ open, onClose }) {
             </div>
           )}
           {isInstalled && (
-            <div className="px-4 py-4 mt-4 border-t border-white/5">
+            <div className="px-4 py-4 mt-4 border-t border-black/5">
               <div
                 data-testid="pwa-installed-badge"
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-emerald-400/70"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-emerald-500"
               >
                 <Download className="w-5 h-5 flex-shrink-0" />
                 <span>האפליקציה מותקנת</span>

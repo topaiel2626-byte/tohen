@@ -44,12 +44,21 @@ export default function Dashboard() {
 
   return (
     <div className="page-enter space-y-6" data-testid="dashboard-page">
-      {/* Hero */}
-      <div className="text-right">
-        <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight" style={{ fontFamily: 'Heebo, sans-serif' }}>
-          Orbit360 Engine
-        </h1>
-        <p className="text-zinc-400 text-base md:text-lg mt-2">מנוע התוכן האישי שלך</p>
+      {/* Hero with Profile */}
+      <div className="flex items-center gap-5 justify-end">
+        <div className="text-right flex-1">
+          <p className="text-slate-500 text-sm mb-1">מערך הבינה המלאכותית של</p>
+          <h1 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-l from-blue-600 via-violet-600 to-indigo-600 tracking-tight leading-tight" style={{ fontFamily: 'Heebo, sans-serif' }}>
+            אליאב צוף
+          </h1>
+          <p className="text-slate-400 text-sm mt-2">מנוע התוכן האישי שלך</p>
+        </div>
+        <img
+          src="/profile.jpg"
+          alt="אליאב צוף"
+          className="w-20 h-20 md:w-24 md:h-24 rounded-2xl object-cover shadow-lg border-2 border-white"
+          data-testid="profile-image"
+        />
       </div>
 
       {/* Quick Actions */}
@@ -59,20 +68,20 @@ export default function Dashboard() {
           data-testid="quick-youtube-btn"
           className="glass-card glow-blue p-5 flex flex-col items-center gap-3 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
         >
-          <div className="w-12 h-12 rounded-2xl bg-blue-500/20 flex items-center justify-center">
-            <Youtube className="w-6 h-6 text-blue-400" />
+          <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center">
+            <Youtube className="w-6 h-6 text-blue-600" />
           </div>
-          <span className="text-white font-medium text-sm">ניתוח YouTube</span>
+          <span className="text-slate-700 font-medium text-sm">ניתוח YouTube</span>
         </button>
         <button
           onClick={() => navigate("/voice")}
           data-testid="quick-voice-btn"
           className="glass-card glow-violet p-5 flex flex-col items-center gap-3 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
         >
-          <div className="w-12 h-12 rounded-2xl bg-violet-500/20 flex items-center justify-center">
-            <Mic className="w-6 h-6 text-violet-400" />
+          <div className="w-12 h-12 rounded-2xl bg-violet-500/10 flex items-center justify-center">
+            <Mic className="w-6 h-6 text-violet-600" />
           </div>
-          <span className="text-white font-medium text-sm">הקלטה קולית</span>
+          <span className="text-slate-700 font-medium text-sm">הקלטה קולית</span>
         </button>
       </div>
 
@@ -83,24 +92,24 @@ export default function Dashboard() {
           data-testid="quick-trends-btn"
           className="glass-card glow-pink p-4 flex flex-col items-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
         >
-          <TrendingUp className="w-5 h-5 text-pink-400" />
-          <span className="text-zinc-300 text-xs">טרנדים</span>
+          <TrendingUp className="w-5 h-5 text-pink-500" />
+          <span className="text-slate-600 text-xs">טרנדים</span>
         </button>
         <button
           onClick={() => navigate("/calendar")}
           data-testid="quick-calendar-btn"
           className="glass-card glow-cyan p-4 flex flex-col items-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
         >
-          <Calendar className="w-5 h-5 text-cyan-400" />
-          <span className="text-zinc-300 text-xs">לוח שנה</span>
+          <Calendar className="w-5 h-5 text-cyan-500" />
+          <span className="text-slate-600 text-xs">לוח שנה</span>
         </button>
         <button
           onClick={() => navigate("/affiliates")}
           data-testid="quick-affiliates-btn"
           className="glass-card glow-green p-4 flex flex-col items-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
         >
-          <DollarSign className="w-5 h-5 text-emerald-400" />
-          <span className="text-zinc-300 text-xs">שותפים</span>
+          <DollarSign className="w-5 h-5 text-emerald-500" />
+          <span className="text-slate-600 text-xs">שותפים</span>
         </button>
       </div>
 
@@ -112,12 +121,12 @@ export default function Dashboard() {
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={() => navigate("/library")}
-            className="text-blue-400 text-sm flex items-center gap-1 hover:text-blue-300 transition-colors"
+            className="text-blue-500 text-sm flex items-center gap-1 hover:text-blue-600 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>הכל</span>
           </button>
-          <h2 className="text-xl font-bold text-white" style={{ fontFamily: 'Heebo, sans-serif' }}>
+          <h2 className="text-xl font-bold text-slate-800" style={{ fontFamily: 'Heebo, sans-serif' }}>
             התיקיות שלך
           </h2>
         </div>
@@ -135,8 +144,8 @@ export default function Dashboard() {
                   <Icon className={`w-5 h-5 ${folderAccentText[folder.id]}`} />
                 </div>
                 <div className="text-right">
-                  <p className="text-white font-semibold text-sm">{folder.name}</p>
-                  <p className="text-zinc-500 text-xs mt-1">{folder.count} פריטים</p>
+                  <p className="text-slate-800 font-semibold text-sm">{folder.name}</p>
+                  <p className="text-slate-400 text-xs mt-1">{folder.count} פריטים</p>
                 </div>
               </button>
             );
@@ -150,12 +159,12 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={() => navigate("/history")}
-              className="text-blue-400 text-sm flex items-center gap-1 hover:text-blue-300 transition-colors"
+              className="text-blue-500 text-sm flex items-center gap-1 hover:text-blue-600 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>הכל</span>
             </button>
-            <h2 className="text-xl font-bold text-white" style={{ fontFamily: 'Heebo, sans-serif' }}>
+            <h2 className="text-xl font-bold text-slate-800" style={{ fontFamily: 'Heebo, sans-serif' }}>
               אחרונים
             </h2>
           </div>
@@ -167,12 +176,12 @@ export default function Dashboard() {
                   key={item.id}
                   onClick={() => navigate(`/content/${item.id}`)}
                   data-testid={`recent-item-${item.id}`}
-                  className="w-full flex items-center gap-3 p-4 rounded-2xl hover:bg-white/5 transition-all duration-200 text-right"
+                  className="w-full flex items-center gap-3 p-4 rounded-2xl hover:bg-black/3 transition-all duration-200 text-right"
                 >
-                  <ArrowLeft className="w-4 h-4 text-zinc-600 flex-shrink-0" />
+                  <ArrowLeft className="w-4 h-4 text-slate-400 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-medium truncate">{item.title}</p>
-                    <p className="text-zinc-500 text-xs truncate">{item.content?.substring(0, 60)}...</p>
+                    <p className="text-slate-800 text-sm font-medium truncate">{item.title}</p>
+                    <p className="text-slate-400 text-xs truncate">{item.content?.substring(0, 60)}...</p>
                   </div>
                   <Icon className={`w-5 h-5 ${folderAccentText[item.folder_id]} flex-shrink-0`} />
                 </button>

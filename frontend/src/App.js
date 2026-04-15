@@ -25,34 +25,36 @@ function Layout({ children }) {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-[#0A0A0B] relative">
+    <div className="min-h-screen bg-[#F5F7FA] relative">
       {/* Ambient BG */}
       <div className="app-bg" />
 
       {/* Top Bar */}
-      <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#0A0A0B]/80 border-b border-white/5">
+      <header className="sticky top-0 z-40 backdrop-blur-xl bg-white/80 border-b border-black/5">
         <div className="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto">
           <button
             onClick={() => setSidebarOpen(true)}
             data-testid="mobile-menu-btn"
-            className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
+            className="w-10 h-10 rounded-xl bg-black/5 flex items-center justify-center hover:bg-black/10 transition-colors"
           >
-            <Menu className="w-5 h-5 text-zinc-400" />
+            <Menu className="w-5 h-5 text-slate-600" />
           </button>
-          <h2
-            className="text-lg font-bold text-white cursor-pointer"
-            style={{ fontFamily: 'Heebo, sans-serif' }}
-            onClick={() => navigate("/")}
-            data-testid="header-logo"
-          >
-            Orbit360
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2
+              className="text-lg font-bold text-slate-800 cursor-pointer"
+              style={{ fontFamily: 'Heebo, sans-serif' }}
+              onClick={() => navigate("/")}
+              data-testid="header-logo"
+            >
+              מערך AI — אליאב צוף
+            </h2>
+          </div>
           <button
             onClick={() => navigate("/history")}
             data-testid="header-search-btn"
-            className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
+            className="w-10 h-10 rounded-xl bg-black/5 flex items-center justify-center hover:bg-black/10 transition-colors"
           >
-            <Search className="w-5 h-5 text-zinc-400" />
+            <Search className="w-5 h-5 text-slate-600" />
           </button>
         </div>
       </header>
