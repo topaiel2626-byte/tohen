@@ -84,4 +84,13 @@ export const getVapidKey = () => api.get("/push/vapid-key");
 export const pushSubscribe = (sub) => api.post("/push/subscribe", sub);
 export const sendTestPush = () => api.post("/push/send-test");
 
+// Smart Import
+export const smartImport = (text) => api.post("/import/smart", { text });
+
+// Strategist Agent
+export const strategistChat = (message, session_id) => api.post("/agents/strategist/chat", { message, session_id });
+export const listStrategistSessions = () => api.get("/agents/strategist/sessions");
+export const getStrategistChat = (sessionId) => api.get(`/agents/strategist/chat/${sessionId}`);
+export const deleteStrategistSession = (sessionId) => api.delete(`/agents/strategist/session/${sessionId}`);
+
 export default api;

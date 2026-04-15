@@ -4,8 +4,8 @@ import "@/index.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { Sidebar } from "@/components/Sidebar";
-import { Menu, Search } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Menu, Search, Crown } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import Dashboard from "@/pages/Dashboard";
 import YouTubeAnalyzer from "@/pages/YouTubeAnalyzer";
@@ -19,10 +19,13 @@ import DigitalGuides from "@/pages/DigitalGuides";
 import AffiliateFinder from "@/pages/AffiliateFinder";
 import HebrewCalendar from "@/pages/HebrewCalendar";
 import TrendFinder from "@/pages/TrendFinder";
+import Strategist from "@/pages/Strategist";
 
 function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const isStrategist = location.pathname === "/strategist";
 
   return (
     <div className="min-h-screen bg-[#FAFBFC] relative">
@@ -68,6 +71,18 @@ function Layout({ children }) {
       </main>
 
       <Toaster position="top-center" dir="rtl" richColors />
+
+      {/* Floating Strategist Button */}
+      {!isStrategist && (
+        <button
+          onClick={() => navigate("/strategist")}
+          data-testid="floating-strategist-btn"
+          className="fixed bottom-20 left-4 z-50 w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300"
+          style={{ boxShadow: '0 4px 20px rgba(245, 158, 11, 0.35)' }}
+        >
+          <Crown className="w-6 h-6 text-white" />
+        </button>
+      )}
     </div>
   );
 }
@@ -88,6 +103,7 @@ function App() {
           <Route path="/guides" element={<DigitalGuides />} />
           <Route path="/affiliates" element={<AffiliateFinder />} />
           <Route path="/trends" element={<TrendFinder />} />
+          <Route path="/strategist" element={<Strategist />} />
           <Route path="/calendar" element={<HebrewCalendar />} />
         </Routes>
       </Layout>

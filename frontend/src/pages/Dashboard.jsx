@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getFolders, getContentItems } from "@/lib/api";
+import { getFolders, getContentItems, smartImport } from "@/lib/api";
 import { DailySnack } from "@/components/DailySnack";
-import { Youtube, Mic, BookOpen, Briefcase, Zap, Lightbulb, ArrowLeft, Plus, TrendingUp, Calendar, DollarSign } from "lucide-react";
+import { Youtube, Mic, BookOpen, Briefcase, Zap, Lightbulb, ArrowLeft, Plus, TrendingUp, Calendar, DollarSign, FileUp, Crown, Loader2, Check, X } from "lucide-react";
+import { toast } from "sonner";
 
 const folderIcons = {
   torah: BookOpen,
@@ -36,11 +37,33 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [folders, setFolders] = useState([]);
   const [recentItems, setRecentItems] = useState([]);
+  const [showImport, setShowImport] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
 
   useEffect(() => {
     getFolders().then((r) => setFolders(r.data)).catch(console.error);
     getContentItems({ limit: 5 }).then((r) => setRecentItems(r.data.items || [])).catch(console.error);
   }, []);
+
+  const handleImport = async () => {
+    if (!importText.trim()) { toast.error("הדבק טקסט לייבוא"); return; }
+    setImporting(true);
+    try {
+      const res = await smartImport(importText);
+      setImportResult(res.data);
+      setImportText("");
+      toast.success(`"${res.data.item.title}" נשמר בתיקייה: ${res.data.detected.folder_id}`);
+      getFolders().then((r) => setFolders(r.data));
+      getContentItems({ limit: 5 }).then((r) => setRecentItems(r.data.items || []));
+      setTimeout(() => setImportResult(null), 3000);
+    } catch (e) {
+      toast.error("שגיאה בייבוא");
+    } finally {
+      setImporting(false);
+    }
+  };
 
   return (
     <div className="page-enter space-y-6" data-testid="dashboard-page">
@@ -60,6 +83,70 @@ export default function Dashboard() {
           data-testid="profile-image"
         />
       </div>
+
+      {/* Quick Import + Strategist */}
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={() => setShowImport(!showImport)}
+          data-testid="quick-import-btn"
+          className="glass-card glow-amber p-4 flex items-center gap-3 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+        >
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center shadow-sm">
+            <FileUp className="w-5 h-5 text-white" />
+          </div>
+          <div className="text-right">
+            <span className="text-slate-800 font-semibold text-sm block">ייבוא מהיר</span>
+            <span className="text-slate-400 text-[11px]">הדבק מסמך מגוגל דוקס</span>
+          </div>
+        </button>
+        <button
+          onClick={() => navigate("/strategist")}
+          data-testid="quick-strategist-btn"
+          className="glass-card glow-gold p-4 flex items-center gap-3 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+        >
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-sm">
+            <Crown className="w-5 h-5 text-white" />
+          </div>
+          <div className="text-right">
+            <span className="text-slate-800 font-semibold text-sm block">האסטרטג</span>
+            <span className="text-slate-400 text-[11px]">יועץ עסקי חכם</span>
+          </div>
+        </button>
+      </div>
+
+      {/* Import Panel */}
+      {showImport && (
+        <div className="glass-card glow-amber p-5 space-y-3" data-testid="import-panel">
+          <div className="flex items-center justify-between">
+            <button onClick={() => setShowImport(false)} className="text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>
+            <p className="text-slate-700 font-bold text-sm">ייבוא מסמכים מהיר</p>
+          </div>
+          {importResult ? (
+            <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+              <Check className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+              <div className="text-right">
+                <p className="text-emerald-800 font-medium text-sm">{importResult.item.title}</p>
+                <p className="text-emerald-600 text-xs">נשמר בתיקייה: {importResult.detected.folder_id}</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <textarea
+                value={importText}
+                onChange={(e) => setImportText(e.target.value)}
+                placeholder="הדבק כאן טקסט מגוגל דוקס... ה-AI יזהה אוטומטית את הנושא ויסווג לתיקייה הנכונה"
+                data-testid="import-textarea"
+                className="w-full bg-white/60 border border-black/5 rounded-xl p-4 text-sm text-slate-700 resize-none focus:outline-none focus:border-amber-300 min-h-[120px]"
+                dir="rtl"
+              />
+              <button onClick={handleImport} disabled={importing} data-testid="import-submit-btn"
+                className="w-full bg-gradient-to-l from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 disabled:opacity-50 text-white font-medium py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md">
+                {importing ? <><Loader2 className="w-4 h-4 animate-spin" /><span>מעבד...</span></> : <><FileUp className="w-4 h-4" /><span>ייבוא ושמירה</span></>}
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-3">

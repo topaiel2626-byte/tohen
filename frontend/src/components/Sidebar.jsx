@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  LayoutDashboard, Youtube, Mic, FolderOpen, Settings, Clock, Search, Zap, BookOpen, Briefcase, Lightbulb, X, Download, Cpu, DollarSign, Calendar, TrendingUp
+  LayoutDashboard, Youtube, Mic, FolderOpen, Settings, Clock, Search, Zap, BookOpen, Briefcase, Lightbulb, X, Download, Cpu, DollarSign, Calendar, TrendingUp, Crown
 } from "lucide-react";
 import { usePwaInstall } from "@/hooks/usePwaInstall";
 
@@ -18,6 +18,7 @@ const navItems = [
 ];
 
 const agentItems = [
+  { path: "/strategist", label: "האסטרטג", icon: Crown, color: "text-amber-500" },
   { path: "/guides", label: "מדריכים דיגיטליים", icon: BookOpen, color: "text-amber-500" },
   { path: "/affiliates", label: "שיווק שותפים", icon: DollarSign, color: "text-green-500" },
   { path: "/trends", label: "טרנדים + כסף", icon: TrendingUp, color: "text-pink-500" },

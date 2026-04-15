@@ -884,6 +884,136 @@ async def delete_trend_search(search_id: str):
         raise HTTPException(status_code=404, detail="חיפוש לא נמצא")
     return {"status": "deleted"}
 
+# --- Smart Import ---
+class SmartImportRequest(BaseModel):
+    text: str
+
+@api_router.post("/import/smart")
+async def smart_import(req: SmartImportRequest):
+    if not req.text.strip():
+        raise HTTPException(status_code=400, detail="טקסט ריק")
+    
+    text_preview = req.text[:4000]
+    system_msg = """אתה מומחה בסיווג תוכן בעברית. קיבלת טקסט שהודבק מגוגל דוקס.
+ענה אך ורק בפורמט JSON הבא (בלי markdown, בלי backticks):
+{"title": "כותרת קצרה וברורה", "folder_id": "אחד מ: torah, business, mental_snacks, general", "summary": "תקציר של משפט אחד"}
+
+כללי סיווג:
+- torah: תוכן תורני, שיעורים, פרשת שבוע, יהדות
+- business: עסקים, שיווק, מכירות, יזמות, אסטרטגיה
+- mental_snacks: מוטיבציה, השראה, פיתוח אישי, מנטליות
+- general: כל דבר אחר"""
+
+    result = await ai_chat(system_msg, f"סווג את הטקסט הזה:\n\n{text_preview}")
+    
+    import json as json_module
+    try:
+        clean = result.strip()
+        if clean.startswith("```"):
+            clean = clean.split("\n", 1)[1].rsplit("```", 1)[0]
+        parsed = json_module.loads(clean)
+    except Exception:
+        parsed = {"title": req.text[:50].strip(), "folder_id": "general", "summary": ""}
+
+    now = datetime.now(timezone.utc).isoformat()
+    doc = {
+        "id": str(uuid.uuid4()),
+        "title": parsed.get("title", req.text[:50]),
+        "content": req.text,
+        "folder_id": parsed.get("folder_id", "general"),
+        "source_type": "import",
+        "youtube_url": None,
+        "strategy": None,
+        "has_package": False,
+        "created_at": now,
+        "updated_at": now,
+    }
+    await db.content_items.insert_one(doc)
+    doc.pop("_id", None)
+    return {"item": doc, "detected": parsed}
+
+# --- Chief Strategist Agent ---
+class StrategistMessage(BaseModel):
+    message: str
+    session_id: Optional[str] = None
+
+@api_router.post("/agents/strategist/chat")
+async def strategist_chat(req: StrategistMessage):
+    all_content = await db.content_items.find({}, {"_id": 0, "title": 1, "content": 1, "folder_id": 1}).sort("created_at", -1).limit(30).to_list(30)
+    
+    knowledge_base = ""
+    for item in all_content:
+        knowledge_base += f"\n--- {item.get('title', '')} [{item.get('folder_id', '')}] ---\n{item.get('content', '')[:500]}\n"
+
+    dna = await db.marketing_dna.find_one({"id": "default"}, {"_id": 0})
+    dna_context = ""
+    if dna:
+        dna_context = f"סגנון המשתמש: {dna.get('writing_style', '')}. טון: {dna.get('tone', '')}. קהל יעד: {dna.get('target_audience', '')}."
+
+    session_id = req.session_id or str(uuid.uuid4())
+    
+    history = await db.strategist_chats.find(
+        {"session_id": session_id}, {"_id": 0}
+    ).sort("created_at", 1).limit(10).to_list(10)
+    
+    history_text = ""
+    for h in history:
+        history_text += f"\nמשתמש: {h.get('user_message', '')}\nאסטרטג: {h.get('assistant_message', '')}\n"
+
+    system_msg = f"""אתה "האסטרטג הראשי" — יועץ אסטרטגי עסקי ברמה הגבוהה ביותר. אתה מנטור מקצועי, חד, ישיר ומעצים.
+
+הסגנון שלך:
+- מדבר בגובה העיניים, בלי בולשיט
+- מאתגר את המשתמש לחשוב גדול
+- נותן צעדים מעשיים ומדידים
+- משתמש בידע העסקי שלך + בידע של המשתמש
+- לא מהסס להגיד "אתה טועה" אם צריך, אבל תמיד עם כבוד
+
+{dna_context}
+
+גוף הידע של המשתמש (תכנים שכתב):
+{knowledge_base[:6000]}
+
+היסטוריית שיחה:
+{history_text}
+
+ענה בעברית. תהיה ספציפי ומעשי."""
+
+    response = await ai_chat(system_msg, req.message)
+    
+    now = datetime.now(timezone.utc).isoformat()
+    chat_doc = {
+        "id": str(uuid.uuid4()),
+        "session_id": session_id,
+        "user_message": req.message,
+        "assistant_message": response,
+        "created_at": now,
+    }
+    await db.strategist_chats.insert_one(chat_doc)
+    chat_doc.pop("_id", None)
+    
+    return {"response": response, "session_id": session_id, "chat_id": chat_doc["id"]}
+
+@api_router.get("/agents/strategist/sessions")
+async def list_strategist_sessions():
+    pipeline = [
+        {"$group": {"_id": "$session_id", "last_message": {"$last": "$user_message"}, "created_at": {"$first": "$created_at"}, "count": {"$sum": 1}}},
+        {"$sort": {"created_at": -1}},
+        {"$limit": 20}
+    ]
+    sessions = await db.strategist_chats.aggregate(pipeline).to_list(20)
+    return {"sessions": [{"session_id": s["_id"], "preview": s["last_message"][:60], "messages": s["count"], "created_at": s["created_at"]} for s in sessions]}
+
+@api_router.get("/agents/strategist/chat/{session_id}")
+async def get_strategist_chat(session_id: str):
+    messages = await db.strategist_chats.find({"session_id": session_id}, {"_id": 0}).sort("created_at", 1).to_list(100)
+    return {"messages": messages}
+
+@api_router.delete("/agents/strategist/session/{session_id}")
+async def delete_strategist_session(session_id: str):
+    await db.strategist_chats.delete_many({"session_id": session_id})
+    return {"status": "deleted"}
+
 # Include router
 app.include_router(api_router)
 
