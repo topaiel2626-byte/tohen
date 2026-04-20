@@ -1,69 +1,91 @@
-# מדריך התקנה — מערך AI של אליאב צוף
+# Self-Hosting Guide — מערך AI של אליאב צוף
 
-## דרישות מינימום
-- שרת VPS עם Docker (Hostinger VPS / כל שרת לינוקס)
-- דומיין (אופציונלי אבל מומלץ)
+## Quick Start (5 דקות)
 
-## התקנה מהירה (5 דקות)
-
-### 1. התחבר לשרת
-```bash
-ssh root@YOUR_SERVER_IP
-```
-
-### 2. התקן Docker
-```bash
-curl -fsSL https://get.docker.com | sh
-sudo systemctl enable docker
-```
-
-### 3. שלוף את הקוד
+### 1. Clone + Configure
 ```bash
 git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git
 cd YOUR_REPO
+
+# Edit AI keys
+nano backend/.env.production
 ```
 
-### 4. העתק את קובץ ה-Environment
-```bash
-cp .env.docker .env
+Set your Groq key:
+```
+OPENAI_API_KEY=gsk_your_groq_key_here
+OPENAI_BASE_URL=https://api.groq.com/openai/v1
+AI_MODEL=llama-3.3-70b-versatile
+STT_MODEL=whisper-large-v3
 ```
 
-### 5. הפעל!
+### 2. Launch
 ```bash
 docker compose up -d --build
 ```
 
-### 6. זהו! האפליקציה רצה
-פתח בדפדפן: `http://YOUR_SERVER_IP`
+### 3. Done!
+Open `http://YOUR_SERVER_IP` in browser.
 
-## הגדרת AI (Groq - חינם)
-1. היכנס לאפליקציה
-2. לחץ על תפריט → "הגדרות AI"
-3. בחר "OpenAI-Compatible"
-4. API URL: `https://api.groq.com/openai/v1`
-5. API Key: המפתח שלך מ-Groq
-6. Model: `llama-3.3-70b-versatile`
-7. שמור
+---
 
-## הוספת HTTPS (מומלץ)
+## Custom Domain (Hostinger)
+
+### With domain:
 ```bash
+# In docker-compose.yml, set BACKEND_URL for the frontend:
+environment:
+  - BACKEND_URL=https://yourdomain.com
+
+# Add HTTPS:
 sudo apt install certbot -y
 sudo certbot certonly --standalone -d yourdomain.com
 ```
-ואז עדכן את nginx.conf בfrontend.
 
-## פקודות שימושיות
+### Change domain later:
+Just change `BACKEND_URL` in docker-compose.yml and restart:
 ```bash
-# צפה בלוגים
-docker compose logs -f
+docker compose down && docker compose up -d
+```
+No rebuild needed!
 
-# עצור הכל
-docker compose down
+---
 
-# עדכון קוד
-git pull && docker compose up -d --build
+## Architecture
 
-# גיבוי MongoDB
-docker exec orbit360-mongo mongodump --out /data/backup
-docker cp orbit360-mongo:/data/backup ./backup
+```
+Browser → Nginx (port 80)
+            ├─ /api/* → Backend (FastAPI :8001)
+            └─ /*     → Frontend (React SPA)
+                         ↓
+                    Backend → MongoDB (:27017)
+                         ↓
+                    AI Provider (Groq/OpenAI/Anthropic)
+```
+
+## AI Provider Options
+
+| Provider | Base URL | Model | Cost |
+|----------|----------|-------|------|
+| Groq | https://api.groq.com/openai/v1 | llama-3.3-70b-versatile | Free |
+| OpenAI | (empty) | gpt-4o | $$ |
+| Together | https://api.together.xyz/v1 | meta-llama/Llama-3-70b | $ |
+| Ollama (local) | http://localhost:11434/v1 | llama3 | Free |
+
+Change via `.env.production` OR in-app at `/ai-settings`.
+
+## Useful Commands
+```bash
+docker compose logs -f          # View logs
+docker compose restart backend  # Restart backend
+docker compose down             # Stop all
+docker compose up -d --build    # Rebuild + start
+
+# Backup MongoDB
+docker exec strategic-inbox-mongo mongodump --out /data/backup
+docker cp strategic-inbox-mongo:/data/backup ./backup
+
+# Restore MongoDB
+docker cp ./backup strategic-inbox-mongo:/data/backup
+docker exec strategic-inbox-mongo mongorestore /data/backup
 ```

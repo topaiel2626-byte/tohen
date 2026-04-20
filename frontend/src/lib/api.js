@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+// Runtime config (self-hosted) takes priority over build-time env
+const BACKEND_URL = window.__RUNTIME_CONFIG__?.BACKEND_URL || process.env.REACT_APP_BACKEND_URL || "";
 const API = `${BACKEND_URL}/api`;
 
 const api = axios.create({
