@@ -5,7 +5,7 @@ import { Save, Loader2, Cpu, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 const PROVIDERS = [
-  { id: "emergent", name: "Emergent (ברירת מחדל)", desc: "Claude + Whisper דרך Emergent" },
+  { id: "default", name: "ברירת מחדל", desc: "Claude + Whisper" },
   { id: "openai", name: "OpenAI", desc: "GPT-4o, GPT-3.5 ועוד" },
   { id: "anthropic", name: "Anthropic", desc: "Claude Sonnet, Opus" },
   { id: "google", name: "Google Gemini", desc: "Gemini Flash/Pro (יש תוכנית חינמית!)" },
@@ -13,7 +13,7 @@ const PROVIDERS = [
 ];
 
 const STT_PROVIDERS = [
-  { id: "emergent", name: "Emergent (ברירת מחדל)" },
+  { id: "default", name: "ברירת מחדל" },
   { id: "openai", name: "OpenAI Whisper" },
   { id: "groq", name: "Groq Whisper (חינם!)" },
   { id: "openai_compatible", name: "אחר (OpenAI-Compatible)" },
@@ -54,8 +54,8 @@ export default function AISettings() {
   }
 
   const needsApiUrl = settings.provider === "openai_compatible";
-  const needsApiKey = settings.provider !== "emergent";
-  const needsSttApiKey = settings.stt_provider !== "emergent";
+  const needsApiKey = settings.provider !== "default";
+  const needsSttApiKey = settings.stt_provider !== "default";
   const needsSttApiUrl = ["openai_compatible", "groq"].includes(settings.stt_provider);
 
   return (
